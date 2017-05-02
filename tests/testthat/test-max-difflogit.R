@@ -10,7 +10,7 @@ test_that("Estimating logit parameters", {
     names = c("Apple", "Microsoft", "IBM", "Google", "Intel", "Samsung", "Sony", "Dell", "Yahoo", "Nokia")
     result = FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, names = names)
     q.solution <- c(0, -0.09059317085259,-1.022392901667,0.3712129560247,-0.6596444467744,0.02930605087281,-0.08321462352542,-0.870332546743,-1.105990654593,-0.8674738151854)
-    expect_equal(result$coef, q.solution, tolerance = 0.00001)
+    expect_equal(as.vector(result$coef), q.solution, tolerance = 0.00001)
 
 })
 

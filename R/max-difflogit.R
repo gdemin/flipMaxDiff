@@ -33,13 +33,20 @@ logLikelihoodMaxDiff = function(b, X)
 #' the design shown to each respondent. Coerced to a matrix if a \code{data.frame}.
 #' @param worst A matrix of integers showing the choice of 'worst'.
 #' @param names The names of the alternatives.
+#' @param trace Non-negative integer indicating the detail of outputs provided during estimation: 0 indicates
+#' no outputs, and 6 is the most detailed outputs.
+#'
 #' @export
-FitMaxDiff <- function(design, version, best, worst, names)
+FitMaxDiff <- function(design, version, best, worst, names, trace = 0)
 {
     X <- IntegrateDesignAndData(design, version, best, worst)
     n.alternatives <- max(design[, -1:-2])
     init.b <- seq(.01,.02, length.out = n.alternatives - 1)
-    solution = optim(init.b, logLikelihoodMaxDiff,  gr = NULL, X = X, method =  "BFGS", control = list(fnscale  = -1, maxit = 1000, trace = 6), hessian = FALSE)
+    solution = optim(init.b, logLikelihoodMaxDiff,
+                     gr = NULL,
+                     X = X,
+                     method =  "BFGS",
+                     control = list(fnscale  = -1, maxit = 1000, trace = trace), hessian = FALSE)
     pars = c(0, solution$par)
     names(pars) = names
     #names(pars) = dimnames(stacked.data)[[2]]
