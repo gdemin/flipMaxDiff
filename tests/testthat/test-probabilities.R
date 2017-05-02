@@ -11,8 +11,6 @@ test_that("dExplodedLogit", {
     expect_equal(dExplodedLogit(c(1, 1, 1)), 1 / 6)
 })
 
-
-
 test_that("Single task", {
     ## Example 1
     # Utilities
@@ -79,6 +77,8 @@ test_that("Single task", {
         expect_equal(p.biased.urn, p.simple)
     }
 })
+
+
 
 
 

@@ -15,6 +15,8 @@ dBestWorst <- function(e.u)
     sum(probs)
 }
 
+
+
 #' \code{dExplodedLogit}
 #' @description Computes the probability of an ordering, where the items are ordered from 'best' to 'worst'.
 #' @param e.u A vector of exp(utilities), ordered from most 'preferred to leas'best' to 'worst'.
