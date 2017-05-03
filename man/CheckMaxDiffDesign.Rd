@@ -7,7 +7,8 @@
 CheckMaxDiffDesign(design)
 }
 \arguments{
-\item{design}{The design.}
+\item{design}{A \link{\code{matrix}}, where each row represents a question or task, and each column
+shows the alternatives to be shown.}
 }
 \description{
 Produces summary statistics for a max-diff design.
