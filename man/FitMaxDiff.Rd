@@ -4,7 +4,7 @@
 \alias{FitMaxDiff}
 \title{\code{FitMaxDiff}}
 \usage{
-FitMaxDiff(design, version, best, worst)
+FitMaxDiff(design, version, best, worst, names, trace = 0)
 }
 \arguments{
 \item{design}{A \code{data.frame}, where the first variable is called 'Version', the second is called 'Task',
@@ -17,6 +17,11 @@ for each task. The integers need to corresponde to the \code{design} vector of i
 the design shown to each respondent. Coerced to a matrix if a \code{data.frame}.}
 
 \item{worst}{A matrix of integers showing the choice of 'worst'.}
+
+\item{names}{The names of the alternatives.}
+
+\item{trace}{Non-negative integer indicating the detail of outputs provided during estimation: 0 indicates
+no outputs, and 6 is the most detailed outputs.}
 }
 \description{
 Fits a rank-ordered logit model with ties to a max-diff experiment.
