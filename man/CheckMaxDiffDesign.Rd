@@ -7,7 +7,7 @@
 CheckMaxDiffDesign(design)
 }
 \arguments{
-\item{design}{A \link{\code{matrix}}, where each row represents a question or task, and each column
+\item{design}{A \code{\link{matrix}}, where each row represents a question or task, and each column
 shows the alternatives to be shown.}
 }
 \description{

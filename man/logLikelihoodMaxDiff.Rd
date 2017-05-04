@@ -4,12 +4,16 @@
 \alias{logLikelihoodMaxDiff}
 \title{\code{dMaxDiff}}
 \usage{
-logLikelihoodMaxDiff(b, X)
+logLikelihoodMaxDiff(b, X, weights, fast = TRUE)
 }
 \arguments{
 \item{b}{A vector of parameter estimates.}
 
 \item{X}{The experimental design for a sample (a \code{\link{list}})}
+
+\item{weights}{An optional vector of sampling or frequency weights.}
+
+\item{fast}{Whether to use function written in c++.}
 }
 \description{
 The log-likelihood for a max-diff experiment.
