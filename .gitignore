@@ -2,6 +2,9 @@
 .Rhistory
 .RData
 inst/doc
+src/*.o
+src/*.so
+src/*.dll
 
 # testthat artifact
 tests/testthat/Rplots.pdf
