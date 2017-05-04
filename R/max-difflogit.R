@@ -13,11 +13,10 @@
 #' @param weights An optional vector of sampling or frequency weights.
 #' @param trace Non-negative integer indicating the detail of outputs provided during estimation: 0 indicates
 #' no outputs, and 6 is the most detailed outputs.
-#' @param fast Whether to use function written in c++.
 #' @importFrom flipData CalibrateWeight CleanSubset CleanWeights
 #' @importFrom stats cor optim
 #' @export
-FitMaxDiff <- function(design, version, best, worst, alternative.names, subset = NULL, weights = NULL, trace = 0, fast = TRUE)
+FitMaxDiff <- function(design, version, best, worst, alternative.names, subset = NULL, weights = NULL, trace = 0)
 {
     # Cleaning and checking data
     n <- length(best[[1]])
@@ -59,7 +58,6 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, subset =
                      gr = NULL,
                      X = X,
                      weights = weights,
-                     fast = fast,
                      method =  "BFGS",
                      control = list(fnscale  = -1, maxit = 1000, trace = trace), hessian = FALSE)
     pars = c(0, solution$par)
@@ -67,41 +65,16 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, subset =
     list(log.likelihood = solution$value, coef = pars, n = n)
 }
 
-
-#' \code{dMaxDiff}
-#' @description The density of a respondent's max-diff data.
-#' @param b A vector of parameter estimates.
-#' @param x The experimental design for a respondent  (a \code{\link{list}}).
-dMaxDiff <- function(b, x)
-{
-    prob <- prod(as.numeric(lapply(x, function(x.i) dBestWorst(exp(b[x.i])))))
-    prob
-
-}
-
-
 #' \code{dMaxDiff}
 #' @description The log-likelihood for a max-diff experiment.
 #' @param b A vector of parameter estimates.
 #' @param X The experimental design for a sample (a \code{\link{list}})
 #' @param weights An optional vector of sampling or frequency weights.
-#' @param fast Whether to use function written in c++.
-logLikelihoodMaxDiff = function(b, X, weights, fast = TRUE)
+logLikelihoodMaxDiff = function(b, X, weights)
 {
-   b[b > 100] = 100
-   b[b < -100] = -100
-   if (fast)
-   {
-       e.u <- t(matrix(exp(c(0, b)[unlist(X)]), nrow = length(X[[1]][[1]])))
-       weights <- if (is.null(weights)) rep(1, length(e.u)) else rep(weights, each = length(X[[1]]))
-       logDensityBestWorst(e.u, weights)
-   }
-   else
-   {
-       probs <- as.numeric(lapply(X, b = c(0, b), dMaxDiff))
-       log.probs <- log(probs)
-       if (!is.null(weights))
-           log.probs <- log.probs * weights
-       sum(log.probs)
-   }
+    b[b > 100] = 100
+    b[b < -100] = -100
+    e.u <- t(matrix(exp(c(0, b)[unlist(X)]), nrow = length(X[[1]][[1]])))
+    weights <- if (is.null(weights)) rep(1, length(e.u)) else rep(weights, each = length(X[[1]]))
+    logDensityBestWorst(e.u, weights)
 }

@@ -5,7 +5,7 @@
 \title{\code{FitMaxDiff}}
 \usage{
 FitMaxDiff(design, version, best, worst, alternative.names, subset = NULL,
-  weights = NULL, trace = 0, fast = TRUE)
+  weights = NULL, trace = 0)
 }
 \arguments{
 \item{design}{A \code{data.frame}, where the first variable is called 'Version', the second is called 'Task',
@@ -28,8 +28,6 @@ used in the fitting process.}
 
 \item{trace}{Non-negative integer indicating the detail of outputs provided during estimation: 0 indicates
 no outputs, and 6 is the most detailed outputs.}
-
-\item{fast}{Whether to use function written in c++.}
 }
 \description{
 Fits a rank-ordered logit model with ties to a max-diff experiment.

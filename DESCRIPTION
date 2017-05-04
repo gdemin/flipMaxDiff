@@ -14,7 +14,7 @@ Imports: AlgDesign,
          flipTransformations,
          Rcpp (>= 0.12.10)
 Suggests: testthat,
-         BiasedUrn
+         foreign
 LinkingTo: Rcpp
 Remotes: Displayr/flipData,
          Displayr/flipTransformations
