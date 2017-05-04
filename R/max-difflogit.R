@@ -83,12 +83,8 @@ logLikelihoodMaxDiff = function(b, X, weights, fast = TRUE)
    b[b < -100] = -100
    if (fast)
    {
-       n_tasks <- length(X[[1]][[1]])
-       e.u <- t(matrix(exp(c(0, b)[unlist(X)]), nrow = n_tasks))
-       if (is.null(weights))
-           weights <- rep(1, length(e.u))
-       else
-           weights <- rep(weights, each = n_tasks)
+       e.u <- t(matrix(exp(c(0, b)[unlist(X)]), nrow = length(X[[1]][[1]])))
+       weights <- if (is.null(weights)) rep(1, length(e.u)) else rep(weights, each = length(X[[1]]))
        logDensityBestWorst(e.u, weights)
    }
    else
