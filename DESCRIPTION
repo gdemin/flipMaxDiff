@@ -13,4 +13,6 @@ Suggests: testthat,
         BiasedUrn,
         readxl
 LinkingTo: Rcpp
+Remotes: Displayr/flipData,
+         Displayr/flipTransformations
 RoxygenNote: 6.0.1
