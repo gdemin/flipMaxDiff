@@ -4,7 +4,7 @@
 \alias{FitMaxDiff}
 \title{\code{FitMaxDiff}}
 \usage{
-FitMaxDiff(design, version, best, worst, alterntive.names, subset = NULL,
+FitMaxDiff(design, version, best, worst, alternative.names, subset = NULL,
   weights = NULL, trace = 0, fast = TRUE)
 }
 \arguments{
@@ -19,7 +19,7 @@ the design shown to each respondent. Coerced to a matrix if a \code{data.frame}.
 
 \item{worst}{A matrix of integers showing the choice of 'worst'.}
 
-\item{alterntive.names}{A character vector names of the alternatives. If only a single element is supplied, it is split by commas.}
+\item{alternative.names}{A character vector names of the alternatives. If only a single element is supplied, it is split by commas.}
 
 \item{subset}{An optional vector specifying a subset of observations to be
 used in the fitting process.}

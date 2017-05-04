@@ -7,7 +7,7 @@
 #' for each task. The integers need to corresponde to the \code{design} vector of integers showing the version of
 #' the design shown to each respondent. Coerced to a matrix if a \code{data.frame}.
 #' @param worst A matrix of integers showing the choice of 'worst'.
-#' @param alterntive.names A character vector names of the alternatives. If only a single element is supplied, it is split by commas.
+#' @param alternative.names A character vector names of the alternatives. If only a single element is supplied, it is split by commas.
 #' @param subset An optional vector specifying a subset of observations to be
 #'   used in the fitting process.
 #' @param weights An optional vector of sampling or frequency weights.
@@ -17,7 +17,7 @@
 #' @importFrom flipData CalibrateWeight CleanSubset CleanWeights
 #' @importFrom stats cor optim
 #' @export
-FitMaxDiff <- function(design, version, best, worst, alterntive.names, subset = NULL, weights = NULL, trace = 0, fast = TRUE)
+FitMaxDiff <- function(design, version, best, worst, alternative.names, subset = NULL, weights = NULL, trace = 0, fast = TRUE)
 {
     # Cleaning and checking data
     n <- length(best[[1]])
@@ -47,12 +47,12 @@ FitMaxDiff <- function(design, version, best, worst, alterntive.names, subset = 
         design <- cbind(Task = 1:nrow(design), design)
     X <- IntegrateDesignAndData(design, version, best, worst)
     n.alternatives <- max(design[, -1:-2])
-    if (missing(alterntive.names))
-        alterntive.names <- paste("Alternative", 1:n.alternatives)
-    if (length(alterntive.names) != n.alternatives)
-        alterntive.names <- strsplit(alterntive.names)
-    if (length(alterntive.names) != n.alternatives)
-        stop("The number of 'alterntive.names' does not match the number of alternatives in the 'design'.")
+    if (missing(alternative.names))
+        alternative.names <- paste("Alternative", 1:n.alternatives)
+    if (length(alternative.names) != n.alternatives)
+        alternative.names <- strsplit(alternative.names, ",")
+    if (length(alternative.names) != n.alternatives)
+        stop("The number of 'alternative.names' does not match the number of alternatives in the 'design'.")
     # Estimating
     init.b <- seq(.01,.02, length.out = n.alternatives - 1)
     solution = optim(init.b, logLikelihoodMaxDiff,
@@ -63,7 +63,7 @@ FitMaxDiff <- function(design, version, best, worst, alterntive.names, subset = 
                      method =  "BFGS",
                      control = list(fnscale  = -1, maxit = 1000, trace = trace), hessian = FALSE)
     pars = c(0, solution$par)
-    names(pars) = alterntive.names
+    names(pars) = alternative.names
     list(log.likelihood = solution$value, coef = pars, n = n)
 }
 
