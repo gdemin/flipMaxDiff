@@ -24,3 +24,26 @@ test_that("Estimating logit parameters", {
     expect_equal(result$log.likelihood, -804.218, tolerance = 0.00001)
 })
 
+test_that("Checking some of the inputs", {
+    # No Version column in design
+    expect_error(FitMaxDiff(design = tech.design[, -1], version = rep(1, nrow(best)), best = best, worst = worst, names = names), NA)
+    # No Task column in design
+    expect_error(FitMaxDiff(design = tech.design[, -2], version = rep(1, nrow(best)), best = best, worst = worst, names = names), NA)
+    # Neither version nor Task column in design
+    expect_error(FitMaxDiff(design = tech.design[, -1:-2], version = rep(1, nrow(best)), best = best, worst = worst, names = names), NA)
+    # No version
+    expect_error(FitMaxDiff(design = tech.design[, -1:-2], best = best, worst = worst, names = names), NA)
+    # inconsistent version information
+    expect_error(FitMaxDiff(design = tech.design[, -1:-2], version = 1:nrow(best), best = best, worst = worst, names = names))
+    des <- tech.design
+    des$Version <- 3
+    expect_error(FitMaxDiff(design = tech.design[, -1:-2], best = best, worst = worst, names = names))
+    # No names
+    expect_error(FitMaxDiff(design = tech.design[, -1:-2], best = best, worst = worst), NA)
+
+    q.solution <- c(0,-0.1358158415588,-1.310226780669,0.4291539729508,-0.7617988208062,-0.5332417439411,-0.4662730731195,-0.8116530486171,-1.356435800804,-1.148628546175)
+    expect_equal(as.vector(result$coef), q.solution, tolerance = 0.00001)
+    expect_equal(result$log.likelihood, -804.218, tolerance = 0.00001)
+})
+
+

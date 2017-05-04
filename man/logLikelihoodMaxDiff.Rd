@@ -4,7 +4,7 @@
 \alias{logLikelihoodMaxDiff}
 \title{\code{dMaxDiff}}
 \usage{
-logLikelihoodMaxDiff(b, X)
+logLikelihoodMaxDiff(b, X, weights)
 }
 \arguments{
 \item{b}{A vector of parameter estimates.}
