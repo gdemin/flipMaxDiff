@@ -5,7 +5,6 @@
 #' @param alternatives.per.question For example, if you have a study of 10 brands, and in each question you show five brands, asking the respondent to choose the one of the five that they like the most and the one that they like the least, then \code{Alternatives per question = 5}.
 #' @param n.repeats The number of times that the algorithm seeks to find a solution. The higher the number, the greater the chance that the best possible solution is found. For most problems, this makes little difference (i.e., a marginally sub-optimal experimental design will tend not to have any meaningful consequence on the conclusions drawn from the analyses).
 #' @import AlgDesign
-#' @param x The experimental design for a respondent  (a \code{\link{list}}).
 #' @export
 MaxDiffDesign <- function(number.alternatives, number.questions, alternatives.per.question, n.repeats = 1000){
     # Check that the parameters are appropriate
@@ -30,7 +29,7 @@ MaxDiffDesign <- function(number.alternatives, number.questions, alternatives.pe
 
 #' \code{CheckMaxDiffDesign}
 #' @description Produces summary statistics for a max-diff design.
-#' @param design A \link{\code{matrix}}, where each row represents a question or task, and each column
+#' @param design A \code{\link{matrix}}, where each row represents a question or task, and each column
 #' shows the alternatives to be shown.
 #' @export
 CheckMaxDiffDesign <- function(design)

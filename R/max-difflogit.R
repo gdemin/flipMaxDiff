@@ -7,15 +7,17 @@
 #' for each task. The integers need to corresponde to the \code{design} vector of integers showing the version of
 #' the design shown to each respondent. Coerced to a matrix if a \code{data.frame}.
 #' @param worst A matrix of integers showing the choice of 'worst'.
-#' @param names A character vector names of the alternatives. If only a single element is supplied, it is split by commas.
+#' @param alterntive.names A character vector names of the alternatives. If only a single element is supplied, it is split by commas.
 #' @param subset An optional vector specifying a subset of observations to be
 #'   used in the fitting process.
 #' @param weights An optional vector of sampling or frequency weights.
 #' @param trace Non-negative integer indicating the detail of outputs provided during estimation: 0 indicates
 #' no outputs, and 6 is the most detailed outputs.
+#' @param fast Whether to use function written in c++.
 #' @importFrom flipData CalibrateWeight CleanSubset CleanWeights
+#' @importFrom stats cor optim
 #' @export
-FitMaxDiff <- function(design, version, best, worst, names, subset = NULL, weights = NULL, trace = 0)
+FitMaxDiff <- function(design, version, best, worst, alterntive.names, subset = NULL, weights = NULL, trace = 0, fast = TRUE)
 {
     # Cleaning and checking data
     n <- length(best[[1]])
@@ -45,22 +47,23 @@ FitMaxDiff <- function(design, version, best, worst, names, subset = NULL, weigh
         design <- cbind(Task = 1:nrow(design), design)
     X <- IntegrateDesignAndData(design, version, best, worst)
     n.alternatives <- max(design[, -1:-2])
-    if (missing(names))
-        names <- paste("Alternative", 1:n.alternatives)
-    if (length(names) != n.alternatives)
-        names <- strsplit(names)
-    if (length(names) != n.alternatives)
-        stop("The number of 'names' does not match the number of alternatives in the 'design'.")
+    if (missing(alterntive.names))
+        alterntive.names <- paste("Alternative", 1:n.alternatives)
+    if (length(alterntive.names) != n.alternatives)
+        alterntive.names <- strsplit(alterntive.names)
+    if (length(alterntive.names) != n.alternatives)
+        stop("The number of 'alterntive.names' does not match the number of alternatives in the 'design'.")
     # Estimating
     init.b <- seq(.01,.02, length.out = n.alternatives - 1)
     solution = optim(init.b, logLikelihoodMaxDiff,
                      gr = NULL,
                      X = X,
                      weights = weights,
+                     fast = fast,
                      method =  "BFGS",
                      control = list(fnscale  = -1, maxit = 1000, trace = trace), hessian = FALSE)
     pars = c(0, solution$par)
-    names(pars) = names
+    names(pars) = alterntive.names
     list(log.likelihood = solution$value, coef = pars, n = n)
 }
 
@@ -81,15 +84,30 @@ dMaxDiff <- function(b, x)
 #' @description The log-likelihood for a max-diff experiment.
 #' @param b A vector of parameter estimates.
 #' @param X The experimental design for a sample (a \code{\link{list}})
-logLikelihoodMaxDiff = function(b, X, weights)
+#' @param weights An optional vector of sampling or frequency weights.
+#' @param fast Whether to use function written in c++.
+logLikelihoodMaxDiff = function(b, X, weights, fast = TRUE)
 {
    b[b > 100] = 100
    b[b < -100] = -100
-   probs <- as.numeric(lapply(X, b = c(0, b), dMaxDiff))
-   log.probs <- log(probs)
-   if (!is.null(weights))
-       log.probs <- log.probs * weights
-   sum(log.probs)
+   if (fast)
+   {
+       n_tasks <- length(X[[1]][[1]])
+       e.u <- t(matrix(exp(c(0, b)[unlist(X)]), nrow = n_tasks))
+       if (is.null(weights))
+           weights <- rep(1, length(e.u))
+       else
+           weights <- rep(weights, each = n_tasks)
+       logDensityBestWorst(e.u, weights)
+   }
+   else
+   {
+       probs <- as.numeric(lapply(X, b = c(0, b), dMaxDiff))
+       log.probs <- log(probs)
+       if (!is.null(weights))
+           log.probs <- log.probs * weights
+       sum(log.probs)
+   }
 }
 
 

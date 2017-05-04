@@ -9,7 +9,11 @@ License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Imports: flipTransformations, AlgDesign, flipData
+Imports: AlgDesign,
+         flipData,
+         flipTransformations,
+         Rcpp (>= 0.12.10)
 Suggests: testthat,
-        BiasedUrn,
-        readxl
+         BiasedUrn
+LinkingTo: Rcpp
 RoxygenNote: 6.0.1
