@@ -12,7 +12,4 @@ importFrom(flipData,CleanSubset)
 importFrom(flipData,CleanWeights)
 importFrom(stats,cor)
 importFrom(stats,optim)
-
 useDynLib(flipMaxDiff)
-exportPattern("^[[:alpha:]]+")
-importFrom(Rcpp, evalCpp)

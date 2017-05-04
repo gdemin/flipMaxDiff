@@ -100,5 +100,3 @@ logLikelihoodMaxDiff = function(b, X, weights, fast = TRUE)
        sum(log.probs)
    }
 }
-
-
