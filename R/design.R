@@ -9,10 +9,8 @@
 MaxDiffDesign <- function(number.alternatives, number.questions, alternatives.per.question, n.repeats = 1000){
     # Check that the parameters are appropriate
     # Sawtooth recommends that number.questions >= 3 * number.alternatives / alternatives.per.question
-    if (number.questions < 3 * number.alternatives / alternatives.per.question)
-        warning("It is recomended that number.questions >= 3 * number.alternatives / alternatives.per.question");
-    best.result = NULL
-    best.D = -Inf
+    best.result <- NULL
+    best.D <- -Inf
     for (i in 1:n.repeats){
         alg.results <- optBlock(~.,withinData=factor(1:number.alternatives),
                                 blocksizes=rep(alternatives.per.question,number.questions),
@@ -38,15 +36,35 @@ CheckMaxDiffDesign <- function(design)
     number.questions <- nrow(design)
     number.alternatives <- max(design)
     alternatives.per.question <- ncol(design)
+    if (number.questions < 3 * number.alternatives / alternatives.per.question)
+        warning(paste0("You have specified ", number.questions, " questions. It is sometimes recommended that number.questions >= 3 * number.alternatives / alternatives.per.question (i.e., that you should have at least ", ceiling(3 * number.alternatives / alternatives.per.question), " questions)."))
     binary.design <- matrix(0,number.questions,number.alternatives, dimnames = list(Question = paste("Question", 1:number.questions), Alternative = 1:number.alternatives))
     for (q in 1:number.questions)
         binary.design[q, design[q, ]] <- 1
     n.appearances.per.alternative <- table(as.numeric(design))
+    if ((min.a <- min(n.appearances.per.alternative)) < 3)
+        warning(paste0("One or more of your alternatives appears only ", min.a, " two times. A common recommendation is that each alternative should appear 3 times. You can review the frequencies by viewing the detailed outputs."))
+    if (min.a != max(n.appearances.per.alternative))
+        warning(paste0("Your design is not balanced. That is, some alternatives appear more frequently than others. You can review the frequencies by viewing the detailed outputs."))
+    correlations <- round(cor(binary.design),2)
+    cors <- abs(correlations[lower.tri(correlations)])
+    cor.max  <- max(cors)
+    cor.min <- min(cors)
+    if (cor.max > 0.5)
+        warning(paste0("The largest binary absolute correlation is ", cor.max, ". You should consider having more questions. You can review the binary correlations by viewing the detailed outputs."))
+    if (cor.min != cor.max)
+        warning(paste0("The absolute value of the correlations varies from ", cor.min, " to ", cor.max, ". This may not be a problem, but ideally the absolute value of the correlations should be constant (this is not always possible). Consider increasing the number of questions."))
     combinations.of.alternatives <- crossprod(table(c(rep(1:number.questions, rep(alternatives.per.question,number.questions))), as.integer(t(design))))
+    min.pairwise <- min(combinations.of.alternatives)
+    if (min.pairwise == 0)
+        warning(paste0("Some alternatives never appear together. You can review the pairwise frequencies by viewing the detailed outputs."))
+    appearance.ratios <- sweep(combinations.of.alternatives, 1, n.appearances.per.alternative, "/")
+    if (any(appearance.ratios[lower.tri(appearance.ratios)] == 1))
+        warning(paste0("Some alternatives only ever appear together. You can review the pairwise frequencies by viewing the detailed outputs."))
     colnames(binary.design) <- c("Alternative 1", 2:number.alternatives)
     list(binary.design = binary.design,
          design = design,
          frequencies = n.appearances.per.alternative,
-         pairwise.frequencies=combinations.of.alternatives,
-         binary.correlations = round(cor(binary.design),2))
+         pairwise.frequencies = combinations.of.alternatives,
+         binary.correlations = correlations)
 }
