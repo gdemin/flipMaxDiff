@@ -10,6 +10,7 @@
 MaxDiffDesign <- function(number.alternatives, number.questions, alternatives.per.question, n.repeats = 1000, seed = 1223){
     # Check that the parameters are appropriate
     # Sawtooth recommends that number.questions >= 3 * number.alternatives / alternatives.per.question
+    set.seed(seed)
     best.result <- NULL
     best.D <- -Inf
     for (i in 1:n.repeats){
