@@ -5,7 +5,7 @@
 \title{\code{MaxDiffDesign}}
 \usage{
 MaxDiffDesign(number.alternatives, number.questions, alternatives.per.question,
-  n.repeats = 1000)
+  n.repeats = 1000, seed = 1223)
 }
 \arguments{
 \item{number.alternatives}{The number of alternatives in the experiment. For example, if you are doing a study investigating preferences for 10 brands, then 10 is the number of alternatives.}
@@ -15,6 +15,8 @@ MaxDiffDesign(number.alternatives, number.questions, alternatives.per.question,
 \item{alternatives.per.question}{For example, if you have a study of 10 brands, and in each question you show five brands, asking the respondent to choose the one of the five that they like the most and the one that they like the least, then \code{Alternatives per question = 5}.}
 
 \item{n.repeats}{The number of times that the algorithm seeks to find a solution. The higher the number, the greater the chance that the best possible solution is found. For most problems, this makes little difference (i.e., a marginally sub-optimal experimental design will tend not to have any meaningful consequence on the conclusions drawn from the analyses).}
+
+\item{seed}{Random number seed for generation of the experimental design.}
 }
 \description{
 Creates an experimental design for a max-diff experiment.

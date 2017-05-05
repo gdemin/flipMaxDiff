@@ -4,9 +4,10 @@
 #' @param number.questions The number of max-diff questions to show to respondents. Sawtooth Software suggests that a rough guideline is: \code{Number of questions >= 3 * Number of alternatives / Alternatives per question}.
 #' @param alternatives.per.question For example, if you have a study of 10 brands, and in each question you show five brands, asking the respondent to choose the one of the five that they like the most and the one that they like the least, then \code{Alternatives per question = 5}.
 #' @param n.repeats The number of times that the algorithm seeks to find a solution. The higher the number, the greater the chance that the best possible solution is found. For most problems, this makes little difference (i.e., a marginally sub-optimal experimental design will tend not to have any meaningful consequence on the conclusions drawn from the analyses).
+#' @param seed Random number seed for generation of the experimental design.
 #' @import AlgDesign
 #' @export
-MaxDiffDesign <- function(number.alternatives, number.questions, alternatives.per.question, n.repeats = 1000){
+MaxDiffDesign <- function(number.alternatives, number.questions, alternatives.per.question, n.repeats = 1000, seed = 1223){
     # Check that the parameters are appropriate
     # Sawtooth recommends that number.questions >= 3 * number.alternatives / alternatives.per.question
     best.result <- NULL
