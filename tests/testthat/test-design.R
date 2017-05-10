@@ -21,5 +21,29 @@ test_that("design",
                             alternatives.per.question = 4,
                             n.repeats = 1))
 
+    expect_error(MaxDiffDesign(number.alternatives = 4,
+                            number.questions = 4,
+                            alternatives.per.question = 10,
+                            n.repeats = 1))
+    expect_error(MaxDiffDesign(number.alternatives = 10,
+                            number.questions = 9,
+                            alternatives.per.question = 10,
+                            n.repeats = 1))
+    expect_error(suppressWarnings(MaxDiffDesign(number.alternatives = 10,
+                            number.questions = 9,
+                            alternatives.per.question = 9,
+                            n.repeats = 1)), NA)
+    expect_error(suppressWarnings(MaxDiffDesign(number.alternatives = 4,
+                            alternatives.per.question = 4,
+                            number.questions = 10,
+                            n.repeats = 1)))
+    expect_error(suppressWarnings(MaxDiffDesign(number.alternatives = 7,
+                            alternatives.per.question = 6,
+                            number.questions = 3,
+                            n.repeats = 1)), NA)
+    expect_error(suppressWarnings(MaxDiffDesign(number.alternatives = 7,
+                            alternatives.per.question = 2,
+                            number.questions = 3,
+                            n.repeats = 1)))
 })
 

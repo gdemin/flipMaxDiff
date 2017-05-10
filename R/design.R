@@ -10,14 +10,20 @@
 MaxDiffDesign <- function(number.alternatives, number.questions, alternatives.per.question, n.repeats = 1000, seed = 1223){
     # Check that the parameters are appropriate
     # Sawtooth recommends that number.questions >= 3 * number.alternatives / alternatives.per.question
+    if (alternatives.per.question >= number.alternatives)
+        stop("The number of alternatives per question must be less than the number of alternatives.")
     set.seed(seed)
     best.result <- NULL
     best.D <- -Inf
     for (i in 1:n.repeats){
-        alg.results <- optBlock(~.,withinData=factor(1:number.alternatives),
-                                blocksizes=rep(alternatives.per.question,number.questions),
-                                nRepeats=5000) #BIB
-        if (alg.results$D > best.D){
+
+        alg.results <- try(optBlock(~.,withinData=factor(1:number.alternatives),
+                                    blocksizes=rep(alternatives.per.question,number.questions),
+                                    nRepeats=5000), silent = TRUE) #BIB, silent = TRUE))
+        if (any("try-error" %in% class(alg.results)))
+            stop("Unable to compute experimental design. It is likely that your inputs are not sensible.")
+        if (alg.results$D > best.D)
+        {
             best.result = alg.results
             best.D = alg.results$D
         }
@@ -25,7 +31,6 @@ MaxDiffDesign <- function(number.alternatives, number.questions, alternatives.pe
     design <- matrix(best.result$rows, nrow = number.questions, byrow = TRUE, dimnames = list(Question = 1:number.questions, Alternative = 1:alternatives.per.question))
     CheckMaxDiffDesign(design)
 }
-
 
 #' \code{CheckMaxDiffDesign}
 #' @description Produces summary statistics for a max-diff design.
@@ -50,8 +55,10 @@ CheckMaxDiffDesign <- function(design)
         warning(paste0("Your design is not balanced. That is, some alternatives appear more frequently than others. You can review the frequencies by viewing the detailed outputs."))
     correlations <- round(cor(binary.design),2)
     cors <- abs(correlations[lower.tri(correlations)])
-    cor.max  <- max(cors)
-    cor.min <- min(cors)
+    cor.max  <- max(cors, na.rm = TRUE)
+    cor.min <- min(cors, na.rm = TRUE)
+    if (any(is.na(cors)))
+        warning("Some of the binary correlations are zero. This is only a problem of the cause is not that an alternative always appears in the design.")
     if (cor.max > 0.5)
         warning(paste0("The largest binary absolute correlation is ", cor.max, ". You should consider having more questions. You can review the binary correlations by viewing the detailed outputs."))
     if (cor.min != cor.max)
