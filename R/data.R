@@ -1,5 +1,6 @@
 #' \code{IntegrateDesignAndData}
-#' @description Computes the probabilities that a pair of items are chosen as 'best' and 'worst' from a set.
+#' @description A matrix where in each row, the first element is the 'best' choice and the last element is the
+#' 'worst' choice.
 #' @param design A \code{data.frame}, where the first variable is called 'Version', the second is called 'Task',
 #' and the remaining variables contain the alternatives shown in each tas.
 #' @param version A vector of integers showing the version of the design shown to each respondent.
@@ -23,7 +24,8 @@ IntegrateDesignAndData <- function(design, version, best, worst)
     n.alternatives <- ncol(design) - 2
     if (max(best) != max(worst) | max(best) != n.alternatives)
         stop(paste0("There are ", n.alternatives, " alternatives per task in the design; this should be the maximum value in 'best' and 'worst' (but is not)."))
-    result <- vector("list", n)
+    result <- matrix(NA, ncol = n.alternatives, nrow = n * n.tasks)
+    c = 1
     for (i in 1:n)
     {
         respondent.design <- as.matrix(design[design$Version == version[i], -1:-2])
@@ -36,9 +38,9 @@ IntegrateDesignAndData <- function(design, version, best, worst)
             b.position <- best[i, t]
             w.position <- worst[i, t]
             positions <- c(b.position, (1:n.alternatives)[c(-b.position, -w.position)], w.position)
-            respondent[[t]] <- task.design[positions]
+            result[c, ] <- task.design[positions]
+            c = c + 1
         }
-        result[[i]] <- respondent
     }
     result
 }

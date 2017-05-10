@@ -55,11 +55,12 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, subset =
     # Estimating
     init.b <- seq(.01,.02, length.out = n.alternatives - 1)
     solution = optim(init.b, logLikelihoodMaxDiff,
-                     gr = NULL,
+                     gr = gradientMaxDiff,
                      X = X,
                      weights = weights,
                      method =  "BFGS",
                      control = list(fnscale  = -1, maxit = 1000, trace = trace), hessian = FALSE)
+
     pars = c(0, solution$par)
     names(pars) = alternative.names
     list(log.likelihood = solution$value, coef = pars, n = n)
@@ -74,7 +75,16 @@ logLikelihoodMaxDiff = function(b, X, weights)
 {
     b[b > 100] = 100
     b[b < -100] = -100
-    e.u <- t(matrix(exp(c(0, b)[unlist(X)]), nrow = length(X[[1]][[1]])))
-    weights <- if (is.null(weights)) rep(1, length(e.u)) else rep(weights, each = length(X[[1]]))
+    e.u <- matrix(exp(c(0, b)[X]), ncol = ncol(X))
+    weights <- if (is.null(weights)) rep(1, length(e.u)) else rep(weights, each = nrow(e.u) / length(weights))
     logDensityBestWorst(e.u, weights)
+}
+
+gradientMaxDiff = function(b, X, weights)
+{
+    b[b > 100] = 100
+    b[b < -100] = -100
+    e.u <- matrix(exp(c(0, b)[X]), ncol = ncol(X))
+    weights <- if (is.null(weights)) rep(1, length(e.u)) else rep(weights, each = nrow(e.u) / length(weights))
+    gradientBestWorst(e.u, X - 1, weights, length(b))
 }

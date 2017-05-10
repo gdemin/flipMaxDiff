@@ -19,5 +19,6 @@ the design shown to each respondent. Coerced to a matrix if a \code{data.frame}.
 \item{worst}{A matrix of integers showing the choice of 'worst'.}
 }
 \description{
-Computes the probabilities that a pair of items are chosen as 'best' and 'worst' from a set.
+A matrix where in each row, the first element is the 'best' choice and the last element is the
+'worst' choice.
 }

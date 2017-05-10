@@ -5,3 +5,7 @@ logDensityBestWorst <- function(e_u, weights) {
     .Call('flipMaxDiff_logDensityBestWorst', PACKAGE = 'flipMaxDiff', e_u, weights)
 }
 
+gradientBestWorst <- function(e_u, x, weights, n_par) {
+    .Call('flipMaxDiff_gradientBestWorst', PACKAGE = 'flipMaxDiff', e_u, x, weights, n_par)
+}
+
