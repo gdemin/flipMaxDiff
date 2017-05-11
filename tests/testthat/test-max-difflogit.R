@@ -40,6 +40,8 @@ test_that("Checking some of the inputs", {
     expect_error(FitMaxDiff(design = des, best = best, worst = worst, alternative.names = names))
     # No names
     expect_error(FitMaxDiff(design = tech.design, best = best, worst = worst), NA)
+    # Correct names as a string
+    expect_error(FitMaxDiff(design = tech.design, best = best, worst = worst, alternative.names = "A, B, C, D,E,F,G,h,I, J"), NA)
 })
 
 

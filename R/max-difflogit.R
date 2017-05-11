@@ -14,6 +14,7 @@
 #' @param trace Non-negative integer indicating the detail of outputs provided during estimation: 0 indicates
 #' no outputs, and 6 is the most detailed outputs.
 #' @importFrom flipData CalibrateWeight CleanSubset CleanWeights
+#' @importFrom flipFormat TrimWhitespace
 #' @importFrom stats cor optim
 #' @export
 FitMaxDiff <- function(design, version, best, worst, alternative.names, subset = NULL, weights = NULL, trace = 0)
@@ -49,7 +50,10 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, subset =
     if (missing(alternative.names))
         alternative.names <- paste("Alternative", 1:n.alternatives)
     if (length(alternative.names) != n.alternatives)
+    {
         alternative.names <- strsplit(alternative.names, ",")
+        alternative.names <- TrimWhitespace(alternative.names)
+    }
     if (length(alternative.names) != n.alternatives)
         stop("The number of 'alternative.names' does not match the number of alternatives in the 'design'.")
     # Estimating
