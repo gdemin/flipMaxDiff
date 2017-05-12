@@ -19,8 +19,18 @@
 #' @export
 FitMaxDiff <- function(design, version, best, worst, alternative.names, subset = NULL, weights = NULL, trace = 0)
 {
+    dat <- cleanAndCheckData(design, version, best, worst, alternative.names, subset, weights)
+    solution <- optimizeMaxDiff(dat$X, dat$weights, dat$n.alternatives - 1, trace)
+    pars = c(0, solution$par)
+    names(pars) = dat$alternative.names
+    list(log.likelihood = solution$value, coef = pars, n = dat$n)
+}
+
+cleanAndCheckData <- function(design, version, best, worst, alternative.names, subset = NULL, weights = NULL)
+{
     # Cleaning and checking data
     n <- length(best[[1]])
+    n.tasks <- nrow(design)
     if (missing(version))
         version <- rep(1, n)
     if (!is.null(weights))
@@ -34,6 +44,10 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, subset =
         weights <- weights[subset]
         weights <- CalibrateWeight(weights)
     }
+    weights <- if (is.null(weights))
+        rep(1, n.tasks * n)
+    else
+        rep(weights, each = n.tasks)
     best <- as.data.frame(best[subset, ])
     worst <- as.data.frame(worst[subset, ])
     if (!("Version" %in% names(design)))
@@ -44,8 +58,8 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, subset =
     if (is.character(compare.version))
         stop("The 'design' and 'version' have incompatible version numbers.")
     if (!("Task" %in% names(design)))
-        design <- cbind(Task = 1:nrow(design), design)
-    X <- IntegrateDesignAndData(design, version, best, worst)
+        design <- cbind(Task = 1:n.tasks, design)
+    dat <- IntegrateDesignAndData(design, version, best, worst)
     n.alternatives <- max(design[, -1:-2])
     if (missing(alternative.names))
         alternative.names <- paste("Alternative", 1:n.alternatives)
@@ -56,18 +70,27 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, subset =
     }
     if (length(alternative.names) != n.alternatives)
         stop("The number of 'alternative.names' does not match the number of alternatives in the 'design'.")
-    # Estimating
-    init.b <- seq(.01,.02, length.out = n.alternatives - 1)
-    solution = optim(init.b, logLikelihoodMaxDiff,
-                     gr = gradientMaxDiff,
-                     X = X,
-                     weights = weights,
-                     method =  "BFGS",
-                     control = list(fnscale  = -1, maxit = 1000, trace = trace), hessian = FALSE)
 
-    pars = c(0, solution$par)
-    names(pars) = alternative.names
-    list(log.likelihood = solution$value, coef = pars, n = n)
+    list(X = dat$X,
+         weights = weights,
+         alternative.names = alternative.names,
+         n = n,
+         n.alternatives = n.alternatives,
+         n.tasks = n.tasks,
+         respondent.indices = dat$respondent.indices)
+}
+
+optimizeMaxDiff <- function(X, weights, n.pars, trace = 0)
+{
+    init.b <- seq(.01, .02, length.out = n.pars)
+    optim(init.b,
+          logLikelihoodMaxDiff,
+          gr = gradientMaxDiff,
+          X = X,
+          weights = weights,
+          method =  "BFGS",
+          control = list(fnscale  = -1, maxit = 1000, trace = trace),
+          hessian = FALSE)
 }
 
 #' \code{dMaxDiff}
@@ -80,7 +103,6 @@ logLikelihoodMaxDiff = function(b, X, weights)
     b[b > 100] = 100
     b[b < -100] = -100
     e.u <- matrix(exp(c(0, b)[X]), ncol = ncol(X))
-    weights <- if (is.null(weights)) rep(1, length(e.u)) else rep(weights, each = nrow(e.u) / length(weights))
     logDensityBestWorst(e.u, weights)
 }
 
@@ -89,6 +111,5 @@ gradientMaxDiff = function(b, X, weights)
     b[b > 100] = 100
     b[b < -100] = -100
     e.u <- matrix(exp(c(0, b)[X]), ncol = ncol(X))
-    weights <- if (is.null(weights)) rep(1, length(e.u)) else rep(weights, each = nrow(e.u) / length(weights))
     gradientBestWorst(e.u, X - 1, weights, length(b))
 }

@@ -41,11 +41,11 @@ NumericVector densitiesP(NumericMatrix e_u)
 }
 
 // [[Rcpp::export]]
-double logDensityBestWorst(NumericMatrix e_u, NumericVector weights)
+NumericVector logDensitiesBestWorst(NumericMatrix e_u, NumericVector weights)
 {
     int n = e_u.nrow();
     int n_choices = e_u.ncol();
-    double result = 0;
+    NumericVector result(n);
     if (n_choices > 2)
     {
         NumericVector densities_p = densitiesP(e_u);
@@ -54,23 +54,29 @@ double logDensityBestWorst(NumericMatrix e_u, NumericVector weights)
             double total = 0;
             for (int j = 0; j < n_choices; j++)
                 total += e_u(i, j);
-            result += log(densities_p[i] * e_u(i, 0) / total) * weights[i];
+            result[i] = log(densities_p[i] * e_u(i, 0) / total) * weights[i];
         }
     }
     else if (n_choices == 2)
     {
         for (int i = 0; i < n; i++)
-            result += log(e_u(i, 0) / (e_u(i, 0) + e_u(i, 1))) * weights[i];
+            result[i] = log(e_u(i, 0) / (e_u(i, 0) + e_u(i, 1))) * weights[i];
     }
     return result;
 }
 
 // [[Rcpp::export]]
-NumericVector gradientBestWorst(NumericMatrix e_u, IntegerMatrix x, NumericVector weights, int n_par)
+double logDensityBestWorst(NumericMatrix e_u, NumericVector weights)
+{
+    return sum(logDensitiesBestWorst(e_u, weights));
+}
+
+// [[Rcpp::export]]
+NumericVector gradientBestWorst(NumericMatrix e_u, IntegerMatrix x, NumericVector weights, int n_pars)
 {
     int n = e_u.nrow();
     int n_choices = e_u.ncol();
-    NumericVector result(n_par);
+    NumericVector result(n_pars);
 
     if (n_choices < 2)
         return result;

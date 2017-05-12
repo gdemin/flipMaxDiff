@@ -24,7 +24,8 @@ IntegrateDesignAndData <- function(design, version, best, worst)
     n.alternatives <- ncol(design) - 2
     if (max(best) != max(worst) | max(best) != n.alternatives)
         stop(paste0("There are ", n.alternatives, " alternatives per task in the design; this should be the maximum value in 'best' and 'worst' (but is not)."))
-    result <- matrix(NA, ncol = n.alternatives, nrow = n * n.tasks)
+    X <- matrix(NA, ncol = n.alternatives, nrow = n * n.tasks)
+    respondent.indices = vector("list", n)
     c = 1
     for (i in 1:n)
     {
@@ -38,9 +39,10 @@ IntegrateDesignAndData <- function(design, version, best, worst)
             b.position <- best[i, t]
             w.position <- worst[i, t]
             positions <- c(b.position, (1:n.alternatives)[c(-b.position, -w.position)], w.position)
-            result[c, ] <- task.design[positions]
+            X[c, ] <- task.design[positions]
+            respondent.indices[[i]] <- (1:n.tasks) + (i - 1) * n.tasks
             c = c + 1
         }
     }
-    result
+    list(X = X, respondent.indices = respondent.indices)
 }
