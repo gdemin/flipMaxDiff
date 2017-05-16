@@ -2,14 +2,15 @@
 % Please edit documentation in R/max-difflogit.R
 \name{FitMaxDiff}
 \alias{FitMaxDiff}
-\title{\code{FitMaxDiff}}
+\title{\code{LatentClassMaxDiff}}
 \usage{
-FitMaxDiff(design, version, best, worst, alternative.names, subset = NULL,
-  weights = NULL, trace = 0)
+FitMaxDiff(design, version, best, worst, alternative.names, n.classes = 1,
+  subset = NULL, weights = NULL, seed = 123, initial.parameters = NULL,
+  trace = 0)
 }
 \arguments{
 \item{design}{A \code{data.frame}, where the first variable is called 'Version', the second is called 'Task',
-and the remaining variables contain the alternatives shown in each tas.}
+and the remaining variables contain the alternatives shown in each task.}
 
 \item{version}{A vector of integers showing the version of the design shown to each respondent.}
 
@@ -21,14 +22,20 @@ the design shown to each respondent. Coerced to a matrix if a \code{data.frame}.
 
 \item{alternative.names}{A character vector names of the alternatives. If only a single element is supplied, it is split by commas.}
 
+\item{n.classes}{The number of latent classes.}
+
 \item{subset}{An optional vector specifying a subset of observations to be
 used in the fitting process.}
 
 \item{weights}{An optional vector of sampling or frequency weights.}
 
+\item{seed}{Seed for initial random class assignments.}
+
+\item{initial.parameters}{Specify initial parameters intead of starting at random.}
+
 \item{trace}{Non-negative integer indicating the detail of outputs provided during estimation: 0 indicates
 no outputs, and 6 is the most detailed outputs.}
 }
 \description{
-Fits a rank-ordered logit model with ties to a max-diff experiment.
+Fits a latent class rank-ordered logit model with ties to a max-diff experiment.
 }

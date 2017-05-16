@@ -11,11 +11,13 @@ LazyData: true
 Imports: flipTransformations, AlgDesign, flipData
 Imports: AlgDesign,
          flipData,
+         flipFormat,
          flipTransformations,
          Rcpp (>= 0.12.10)
 Suggests: testthat,
          foreign
 LinkingTo: Rcpp
 Remotes: Displayr/flipData,
+         Displayr/flipFormat,
          Displayr/flipTransformations
 RoxygenNote: 6.0.1
