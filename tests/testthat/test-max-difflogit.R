@@ -6,6 +6,8 @@ best <- tech.data[, c("Q5a_left", "Q5b_left", "Q5c_left", "Q5d_left", "Q5e_left"
 worst <- tech.data[, c("Q5a_right", "Q5b_right", "Q5c_right", "Q5d_right", "Q5e_right", "Q5f_right")]
 names <- c("Apple", "Microsoft", "IBM", "Google", "Intel", "Samsung", "Sony", "Dell", "Yahoo", "Nokia")
 
+des <- matrix(names[as.integer(as.matrix(tech.design[, -1:-2]))], ncol = 5)
+
 test_that("Estimating logit parameters", {
     # Aggregate
     result <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names)

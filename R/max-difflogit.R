@@ -51,21 +51,28 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, n.classe
             previous.ll <- ll
     }
 
+    result <- list(posterior.probabilities = pp, log.likelihood = ll, n.classes = n.classes)
     if (n.classes > 1)
     {
-        coefs <- matrix(0, nrow = n.beta + 1, ncol = n.classes)
+        coef <- matrix(0, nrow = n.beta + 1, ncol = n.classes)
         for (c in 1:n.classes)
-            coefs[2:(n.beta + 1), c] <- p[((c - 1) * n.beta + 1):(c * n.beta)]
-        rownames(coefs) <- dat$alternative.names
-        colnames(coefs) <- paste("Class", 1:n.classes)
-        list(log.likelihood = ll, coef = coefs, class.weights = getClassWeights(p, n.classes, n.beta))
+            coef[2:(n.beta + 1), c] <- p[((c - 1) * n.beta + 1):(c * n.beta)]
+        rownames(coef) <- dat$alternative.names
+        colnames(coef) <- paste("Class", 1:n.classes)
+        n.parameters <- prod(dim(coef[-1,])) + n.classes - 1
+        result$class.sizes = getClassWeights(p, n.classes, n.beta)
     }
     else
     {
-        p <- c(0, p)
-        names(p) <- dat$alternative.names
-        list(log.likelihood = ll, coef = p)
+        coef <- c(0, p)
+        n.parameters <- length(p)
+        names(coef) <- dat$alternative.names
     }
+    result$coef = coef
+    result$effective.sample.size <- ess <- sum(weights)
+    result$bic = -2*ll + log(ess) * n.parameters
+    class(result) <- "FitMaxDiff"
+    result
 }
 
 #' @importFrom flipData CalibrateWeight CleanSubset CleanWeights
@@ -149,6 +156,24 @@ logLikelihoodMaxDiff = function(b, X, weights)
     b[b < -100] = -100
     e.u <- matrix(exp(c(0, b)[X]), ncol = ncol(X))
     logDensityBestWorst(e.u, weights)
+}
+
+#' \code{RespondentParameters}
+#' @description Computes parameters for each respondent.
+#' @param object A \code{FitMaxDiff} object.
+#' @export
+RespondentParameters = function(object)
+{
+    pp <- object$posterior.probabilities
+    coef <- object$coef
+    result <- pp[ ,1, drop = FALSE] %*% t(coef[, 1, drop = FALSE])
+    n.classes <- object$n.classes
+    if (n.classes > 1)
+        for (c in 2:n.classes)
+            result <- result + pp[ ,c , drop = FALSE] %*% t(coef[, c, drop = FALSE])
+    result <- as.data.frame(result)
+    names(result) <- rownames(coef)
+    result
 }
 
 gradientMaxDiff = function(b, X, weights)
