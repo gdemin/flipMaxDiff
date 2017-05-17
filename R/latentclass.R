@@ -17,19 +17,20 @@ randomClassMemberships <- function(n, n.classes, seed = 123)
 }
 
 # Infer parameters given class memberships
-inferParameters <- function(class.memberships, X, weights, ind.levels, n.beta, trace)
+inferParameters <- function(class.memberships, X, boost, weights, ind.levels, n.beta, trace)
 {
     n.classes <- ncol(class.memberships)
     n.parameters <- n.beta * n.classes + n.classes - 1
+    n.levels <- length(ind.levels)
     res <- vector("numeric", n.parameters)
     # Class parameters
     for (c in 1:n.classes)
     {
         class.weights <- vector("numeric", nrow(X))
-        for (l in 1:length(ind.levels))
+        for (l in 1:n.levels)
             class.weights[ind.levels[[l]]] <- class.memberships[l, c]
         class.weights <- class.weights * weights
-        solution <- optimizeMaxDiff(X, class.weights, n.beta, trace)
+        solution <- optimizeMaxDiff(X, boost, class.weights, n.beta, trace)
         res[((c - 1) * n.beta + 1):(c * n.beta)] <- solution$par
     }
 
@@ -43,45 +44,49 @@ inferParameters <- function(class.memberships, X, weights, ind.levels, n.beta, t
 }
 
 # Calculate posterior probabilities of class membership given parameters
-posteriorProbabilities <- function(pars, X, ind.levels, n.classes, n.beta)
+posteriorProbabilities <- function(pars, X, boost, ind.levels, n.classes, n.beta)
 {
     log.class.weights <- log(getClassWeights(pars, n.classes, n.beta))
     class.pars <- getClassParameters(pars, n.classes, n.beta)
-    log.densities <- logDensities(class.pars, X, ind.levels, n.classes)
+    log.densities <- logDensities(class.pars, X, boost, ind.levels, n.classes)
 
-    n.repsondents <- length(ind.levels)
-    repsondents.log.densities <- vector("numeric", n.repsondents)
-    for (l in 1:n.repsondents)
+    n.levels <- length(ind.levels)
+    repsondents.log.densities <- vector("numeric", n.levels)
+    for (l in 1:n.levels)
         repsondents.log.densities[l] <- logOfSum(log.class.weights + log.densities[l, ])
 
-
-    exp(t(matrix(rep(log.class.weights, n.repsondents), n.classes)) + log.densities
+    exp(t(matrix(rep(log.class.weights, n.levels), n.classes)) + log.densities
         - t(matrix(rep(repsondents.log.densities, each = n.classes), n.classes)))
 }
 
-logLikelihood <- function(pars, X, weights, ind.levels, n.classes, n.beta)
+logLikelihood <- function(pars, X, boost, weights, ind.levels, n.classes, n.beta, n.tasks)
 {
     log.class.weights <- log(getClassWeights(pars, n.classes, n.beta))
     class.pars <- getClassParameters(pars, n.classes, n.beta)
-    log.densities <- logDensities(class.pars, X, ind.levels, n.classes)
-    n.tasks <- length(weights) / length(ind.levels)
+    log.densities <- logDensities(class.pars, X, boost, ind.levels, n.classes)
+    n.levels <- length(ind.levels)
     res <- 0
-    for (l in 1:length(ind.levels))
-        res <- res + logOfSum(log.class.weights + log.densities[l, ]) * weights[(l - 1) * n.tasks + 1]
+    for (l in 1:n.levels)
+    {
+        # w <- sum(weights[ind.levels[[l]]]) / n.tasks
+        # res <- res + logOfSum(log.class.weights + log.densities[l, ]) * w
+        res <- res + logOfSum(log.class.weights + log.densities[l, ])
+    }
     res
 }
 
-logDensities <- function(pars.list, X, ind.levels, n.classes)
+logDensities <- function(pars.list, X, boost, ind.levels, n.classes)
 {
     log.shares <- matrix(NA, nrow(X), n.classes)
     for (c in 1:n.classes)
     {
-        e.u <- matrix(exp(c(0, pars.list[[c]])[X]), ncol = ncol(X))
+        e.u <- exp(matrix(c(0, pars.list[[c]])[X], ncol = ncol(X)) + boost)
         log.shares[, c] <- logDensitiesBestWorst(e.u, rep(1, length(e.u)))
     }
 
-    res <- matrix(NA, length(ind.levels), n.classes)
-    for (l in 1:length(ind.levels))
+    n.levels <- length(ind.levels)
+    res <- matrix(NA, n.levels, n.classes)
+    for (l in 1:n.levels)
         res[l, ] <- colSums(log.shares[ind.levels[[l]], , drop = FALSE])
     res
 }
@@ -113,4 +118,15 @@ getClassParameters <- function(pars, n.classes, n.beta)
     for (c in 1:n.classes)
         pars.list[[c]] <- pars[((c - 1) * n.beta + 1):(c * n.beta)]
     pars.list
+}
+
+getLevelIndices <- function(characteristic, n.tasks)
+{
+    n.respondents <- length(characteristic)
+    lvls <- unique(characteristic)
+    n.levels <- length(lvls)
+    result <- vector("list", n.levels)
+    for (l in 1:n.levels)
+        result[[l]] <- (1:(n.respondents * n.tasks))[rep(characteristic == lvls[l], each = n.tasks)]
+    result
 }

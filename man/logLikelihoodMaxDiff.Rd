@@ -4,12 +4,14 @@
 \alias{logLikelihoodMaxDiff}
 \title{\code{dMaxDiff}}
 \usage{
-logLikelihoodMaxDiff(b, X, weights)
+logLikelihoodMaxDiff(b, X, boost, weights)
 }
 \arguments{
 \item{b}{A vector of parameter estimates.}
 
 \item{X}{The experimental design for a sample (a \code{\link{list}})}
+
+\item{boost}{Boosting constants.}
 
 \item{weights}{An optional vector of sampling or frequency weights.}
 }

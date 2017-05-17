@@ -2,11 +2,11 @@
 % Please edit documentation in R/max-difflogit.R
 \name{FitMaxDiff}
 \alias{FitMaxDiff}
-\title{\code{LatentClassMaxDiff}}
+\title{\code{FitMaxDiff}}
 \usage{
 FitMaxDiff(design, version, best, worst, alternative.names, n.classes = 1,
-  subset = NULL, weights = NULL, seed = 123, initial.parameters = NULL,
-  trace = 0)
+  subset = NULL, weights = NULL, characteristics = NULL, seed = 123,
+  initial.parameters = NULL, trace = 0, lc = TRUE)
 }
 \arguments{
 \item{design}{A \code{data.frame}, where the first variable is called 'Version', the second is called 'Task',
@@ -29,11 +29,15 @@ used in the fitting process.}
 
 \item{weights}{An optional vector of sampling or frequency weights.}
 
+\item{characteristics}{Data frame of characteristics on which to run varying coefficients by latent class boosting.}
+
 \item{seed}{Seed for initial random class assignments.}
 
 \item{initial.parameters}{Specify initial parameters intead of starting at random.}
 
-\item{trace}{Non-negative integer indicating the detail of outputs provided during estimation: 0 indicates
+\item{trace}{Non-negative integer indicating the detail of outputs provided during estimation: 0 indicates}
+
+\item{lc}{Whether to run latent class step at the end if characteristics are supplied.
 no outputs, and 6 is the most detailed outputs.}
 }
 \description{

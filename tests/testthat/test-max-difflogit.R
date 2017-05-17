@@ -70,4 +70,21 @@ test_that("Checking some of the inputs", {
     expect_error(FitMaxDiff(design = tech.design, best = best, worst = worst, alternative.names = "A, B, C, D,E,F,G,h,I, J"), NA)
 })
 
+test_that("Varying coefficients", {
+    # Aggregate
+    ll.aggregate <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, characteristics = NULL, n.classes = 1)$log.likelihood
+    # Gender varying coefficient
+    ll.gender <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, characteristics = data.frame(tech.data$Q1), n.classes = 1, lc = FALSE)$log.likelihood
+    expect_equal(ll.gender, ll.aggregate)
+    # Apple varying coefficient
+    ll.apple <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, characteristics = data.frame(tech.data$Q3_01), n.classes = 1, lc = FALSE)$log.likelihood
+    expect_true(ll.apple > ll.aggregate)
+    # Apple varying coefficient with boosting
+    ll.apple.boosting.5.classes <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, characteristics = data.frame(tech.data$Q3_01), n.classes = 5)$log.likelihood
+    ll.5.classes <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, n.classes = 5)$log.likelihood
+    expect_true(ll.apple.boosting.5.classes > ll.5.classes)
 
+    ll.apple.boosting.1.class <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, characteristics = data.frame(tech.data$Q3_01), n.classes = 1)$log.likelihood
+    expect_true(ll.apple.boosting.1.class > ll.apple)
+    expect_true(ll.apple.boosting.1.class > ll.aggregate)
+})
