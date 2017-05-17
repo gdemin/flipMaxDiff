@@ -59,7 +59,7 @@ posteriorProbabilities <- function(pars, X, boost, ind.levels, n.classes, n.beta
         - t(matrix(rep(repsondents.log.densities, each = n.classes), n.classes)))
 }
 
-logLikelihood <- function(pars, X, boost, weights, ind.levels, n.classes, n.beta, n.tasks)
+logLikelihood <- function(pars, X, boost, weights, ind.levels, n.classes, n.beta, n.tasks, apply.weights)
 {
     log.class.weights <- log(getClassWeights(pars, n.classes, n.beta))
     class.pars <- getClassParameters(pars, n.classes, n.beta)
@@ -68,9 +68,14 @@ logLikelihood <- function(pars, X, boost, weights, ind.levels, n.classes, n.beta
     res <- 0
     for (l in 1:n.levels)
     {
-        # w <- sum(weights[ind.levels[[l]]]) / n.tasks
-        # res <- res + logOfSum(log.class.weights + log.densities[l, ]) * w
-        res <- res + logOfSum(log.class.weights + log.densities[l, ])
+        if (apply.weights)
+        {
+            res <- res + logOfSum(log.class.weights + log.densities[l, ]) * weights[(l - 1) * n.tasks + 1]
+        }
+        else
+        {
+            res <- res + logOfSum(log.class.weights + log.densities[l, ])
+        }
     }
     res
 }

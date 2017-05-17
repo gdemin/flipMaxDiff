@@ -26,6 +26,8 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, n.classe
     if (!is.null(weights) && !is.null(characteristics))
         stop("Weights are not able to be applied when characteristics are supplied")
 
+    apply.weights <- is.null(characteristics)
+
     dat <- cleanAndCheckData(design, version, best, worst, alternative.names, subset, weights, characteristics)
     n.respondents <- length(dat$respondent.indices)
     n.tasks <- dat$n.tasks
@@ -44,7 +46,7 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, n.classe
             for (n.c in 1:n.levels)
             {
                 solution <- latentClassMaxDiff(dat, alternative.names, ind.levels, resp.pars, n.c, seed,
-                                   initial.parameters, trace)
+                                   initial.parameters, trace, apply.weights = apply.weights)
                 if (solution$bic < best.bic)
                 {
                     best.bic <- solution$bic
@@ -56,13 +58,13 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, n.classe
     }
     if (lc || is.null(characteristics))
         latentClassMaxDiff(dat, alternative.names, dat$respondent.indices, resp.pars, n.classes, seed,
-                       initial.parameters, trace)
+                       initial.parameters, trace, apply.weights = apply.weights)
     else
         best.solution
 }
 
 latentClassMaxDiff <- function(dat, alternative.names, ind.levels, resp.pars = NULL, n.classes = 1, seed = 123,
-                               initial.parameters = NULL, trace = 0)
+                               initial.parameters = NULL, trace = 0, apply.weights = TRUE)
 {
     n.respondents <- length(dat$respondent.indices)
     n.levels <- length(ind.levels)
@@ -102,7 +104,7 @@ latentClassMaxDiff <- function(dat, alternative.names, ind.levels, resp.pars = N
     {
         pp <- posteriorProbabilities(p, X, boost, ind.levels, n.classes, n.beta)
         p <- inferParameters(pp, X, boost, weights, ind.levels, n.beta, trace)
-        ll <- logLikelihood(p, X, boost, weights, ind.levels, n.classes, n.beta, n.tasks)
+        ll <- logLikelihood(p, X, boost, weights, ind.levels, n.classes, n.beta, n.tasks, apply.weights = apply.weights)
         # print(ll)
         if (ll - previous.ll < tol)
             break
