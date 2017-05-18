@@ -88,3 +88,23 @@ test_that("Varying coefficients", {
     expect_true(ll.apple.boosting.1.class > ll.apple)
     expect_true(ll.apple.boosting.1.class > ll.aggregate)
 })
+
+
+test_that("Saving variables", {
+    sub <- c(FALSE, FALSE, rep(TRUE, 100), rep(FALSE, 200))
+    # Posterior probabilities.
+    lc.3 <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, n.classes = 3, subset = sub)
+    pp <- lc.3$posterior.probabilities[sub, ]
+    expect.equal(ncol(pp), 3)
+    expect.equal(sd(apply(pp, 1, sum)), 0)
+    # Individual-level paramters
+    pars <- RespondentParameters(lc.3)
+    expect.equal(sum(!is.na(pars[, 1])), 100)
+    # Segment memberships
+    m <- table(Memberships(lc.3))
+    expect_equal(length(table(m)), 3)
+    expect_equal(sum(table(m)), 100)
+})
+
+
+

@@ -266,3 +266,14 @@ RespondentParameters <- function(object)
     names(result) <- rownames(coef)
     result
 }
+
+#' \code{Memberships}
+#' @description Allocates respondents to classes based on the maximum posterior probabilty.
+#' @param object A \code{FitMaxDiff} object.
+#' @export
+Memberships <- function(object)
+{
+    pp <- object$posterior.probabilities
+    .fun <- function(x) match(max(x), x)[1]
+    apply(pp, 1, .fun)
+}
