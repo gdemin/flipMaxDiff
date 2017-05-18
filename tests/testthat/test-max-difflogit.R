@@ -13,6 +13,10 @@ test_that("Estimating logit parameters", {
     result <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names)
     q.solution <- c(0, -0.09059317085259,-1.022392901667,0.3712129560247,-0.6596444467744,0.02930605087281,-0.08321462352542,-0.870332546743,-1.105990654593,-0.8674738151854)
     expect_equal(as.vector(result$coef), q.solution, tolerance = 0.0001)
+    q.probs <- c(0.1358834315826, 0.1241144627641, 0.0488817685569, 0.1969619087625,
+                 0.07025650843667, 0.1399245639353, 0.125033634106, 0.05690964591415,
+                 0.04496150786246, 0.05707256807926)
+    expect_equal(as.vector(result$probabilities), q.probs, tolerance = 0.0001)
     # Subset
     sub <- unclass(tech.data$Q2) <= 3
     result = FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, subset = sub, alternative.names = names)
@@ -24,9 +28,11 @@ test_that("Estimating logit parameters", {
     q.solution <- c(0,-0.1358158415588,-1.310226780669,0.4291539729508,-0.7617988208062,-0.5332417439411,-0.4662730731195,-0.8116530486171,-1.356435800804,-1.148628546175)
     expect_equal(as.vector(result$coef), q.solution, tolerance = 0.00001)
     expect_equal(result$log.likelihood, -804.218, tolerance = 0.00001)
+
+    expect_error(print(result), NA)
 })
 
-test_that("Estimating logit parameters", {
+test_that("Latent class", {
     result <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, n.classes = 2)
     q.solution <- structure(c(0, -2.30575675367483, -3.4390021812939, -1.718556454195,
                               -3.03608376429065, -2.43609639597502, -2.42392249235851, -3.28327816635577,
@@ -35,6 +41,10 @@ test_that("Estimating logit parameters", {
                               0.701477372305963, 0.327266346090314, 0.941038167774774), .Dim = c(10L, 2L))
     expect_equal(unname(result$coef), q.solution, tolerance = 0.001)
     expect_equal(result$log.likelihood, -4482.242, tolerance = 0.00001)
+    q.probs <- structure(c(0.6118, 0.061, 0.0196, 0.1097, 0.0294, 0.0535, 0.0542,
+                           0.0229, 0.0183, 0.0195, 0.0297, 0.1186, 0.0455, 0.1884, 0.0753,
+                           0.2138, 0.1516, 0.0598, 0.0412, 0.076), .Dim = c(10L, 2L))
+    expect_equal(unname(result$probabilities), q.probs, tolerance = 0.001)
 
     # Subset and weight
     sub <- unclass(tech.data$Q2) <= 3
@@ -48,6 +58,8 @@ test_that("Estimating logit parameters", {
                 0.858383432709159, 0.19099885898787, 0.164046805635207), .Dim = c(10L, 2L))
     expect_equal(unname(result$coef), q.solution, tolerance = 0.01) # this is quite lax right now. Fit will improve with the addition of a numerical optimization stage
     expect_equal(result$log.likelihood, -730.724, tolerance = 0.01)
+
+    expect_error(print(result), NA)
 })
 
 test_that("Checking some of the inputs", {
@@ -87,4 +99,6 @@ test_that("Varying coefficients", {
     ll.apple.boosting.1.class <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, characteristics = data.frame(tech.data$Q3_01), n.classes = 1)$log.likelihood
     expect_true(ll.apple.boosting.1.class > ll.apple)
     expect_true(ll.apple.boosting.1.class > ll.aggregate)
+
+    expect_error(print(ll.apple.boosting.5.classes), NA)
 })
