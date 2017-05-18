@@ -27,6 +27,8 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, n.classe
 {
     if (!is.null(weights) && !is.null(characteristics))
         stop("Weights are not able to be applied when characteristics are supplied")
+    if (!lc && is.null(characteristics))
+        stop("There is no model to run. Select covariates and/or run latent class analysis over respondents.")
 
     apply.weights <- is.null(characteristics)
 
@@ -375,7 +377,7 @@ print.FitMaxDiff <- function(x, ...)
     {
         if (!is.null(x$covariates.notes))
             stop("Class table cannot be displayed when covariates are applied.")
-        paste("Class", 1:x$n.classes, "(%)<br>Size:", FormatAsPercent(x$class.sizes, 3))
+        col.labels <- paste("Class", 1:x$n.classes, "(%)<br>Size:", FormatAsPercent(x$class.sizes, 3))
         MaxDiffTableClasses(as.matrix(x$probabilities), col.labels, title, "", footer)
     }
 }
