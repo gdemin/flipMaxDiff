@@ -6,7 +6,8 @@
 \usage{
 FitMaxDiff(design, version, best, worst, alternative.names, n.classes = 1,
   subset = NULL, weights = NULL, characteristics = NULL, seed = 123,
-  initial.parameters = NULL, trace = 0, lc = TRUE)
+  initial.parameters = NULL, trace = 0, lc = TRUE,
+  output = "Probabilities")
 }
 \arguments{
 \item{design}{A \code{data.frame}, where the first variable is called 'Version', the second is called 'Task',
@@ -39,6 +40,8 @@ used in the fitting process.}
 
 \item{lc}{Whether to run latent class step at the end if characteristics are supplied.
 no outputs, and 6 is the most detailed outputs.}
+
+\item{output}{Output type. Can be "Probabilities" or "Classes".}
 }
 \description{
 Fits a latent class rank-ordered logit model with ties to a max-diff experiment.
