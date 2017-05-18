@@ -358,7 +358,7 @@ print.FitMaxDiff <- function(x, ...)
     {
         if (!is.null(x$covariates.notes))
             stop("Class table cannot be displayed when covariates are applied.")
-        paste("Class", 1:x$n.classes, "(%)<br>Size:", FormatAsPercent(x$class.sizes, 3))
+        col.labels <- paste("Class", 1:x$n.classes, "(%)<br>Size:", FormatAsPercent(x$class.sizes, 3))
         MaxDiffTableClasses(as.matrix(x$probabilities), col.labels, title, "", footer)
     }
 }

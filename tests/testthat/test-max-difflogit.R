@@ -60,6 +60,14 @@ test_that("Latent class", {
     expect_equal(result$log.likelihood, -730.724, tolerance = 0.01)
 
     expect_error(print(result), NA)
+
+    expect_error(print(FitMaxDiff(design = tech.design,
+                                  version = rep(1, nrow(best)),
+                                  best = best,
+                                  worst = worst,
+                                  alternative.names = names,
+                                  n.classes = 2,
+                                  output = "Classes")), NA)
 })
 
 test_that("Checking some of the inputs", {
