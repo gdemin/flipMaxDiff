@@ -26,6 +26,8 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, n.classe
 {
     if (!is.null(weights) && !is.null(characteristics))
         stop("Weights are not able to be applied when characteristics are supplied")
+    if (!lc && is.null(characteristics))
+        stop("There is no model to run. Select covariates and/or run latent class analysis over respondents.")
 
     apply.weights <- is.null(characteristics)
 
