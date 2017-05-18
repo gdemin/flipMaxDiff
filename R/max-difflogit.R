@@ -32,13 +32,15 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, n.classe
     n.respondents <- length(dat$respondent.indices)
     n.tasks <- dat$n.tasks
     resp.pars <- NULL
+    n.previous.parameters <- 0
     characteristics <- dat$characteristics
     if (!is.null(characteristics))
     {
         resp.pars <- matrix(0, nrow = n.respondents, ncol = dat$n.alternatives)
-        for (ch in characteristics)
+        n.characteristics <- length(characteristics)
+        for (i in 1:n.characteristics)
         {
-            ind.levels <- getLevelIndices(ch, n.tasks)
+            ind.levels <- getLevelIndices(characteristics[[i]], n.tasks)
             n.levels <- length(ind.levels)
             best.bic <- Inf
             best.solution <- NULL
@@ -46,25 +48,38 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, n.classe
             for (n.c in 1:n.levels)
             {
                 solution <- latentClassMaxDiff(dat, alternative.names, ind.levels, resp.pars, n.c, seed,
-                                   initial.parameters, trace, apply.weights = apply.weights)
+                                   initial.parameters, n.previous.parameters, trace, apply.weights = apply.weights)
                 if (solution$bic < best.bic)
                 {
                     best.bic <- solution$bic
                     best.solution <- solution
                 }
+                cat("Characteristic:", names(characteristics)[i],
+                    "\nBIC:", solution$bic,
+                    "\nLL:", solution$log.likelihood,
+                    "\nNumber of classes:", solution$n.classes, "\n\n")
             }
-            resp.pars <- as.matrix(RespondentParameters(best.solution))
+            if (best.solution$n.classes > 1)
+            {
+                resp.pars <- as.matrix(RespondentParameters(best.solution))
+                n.previous.parameters <- best.solution$n.parameters
+                cat("Characteristic:", names(characteristics)[i],
+                    "\nselection for number of classes:", best.solution$n.classes, "\n\n")
+            }
+            else
+                cat("Characteristic:", names(characteristics)[i], "\nNo selection.")
         }
     }
+
     if (lc || is.null(characteristics))
         latentClassMaxDiff(dat, alternative.names, dat$respondent.indices, resp.pars, n.classes, seed,
-                       initial.parameters, trace, apply.weights = apply.weights)
+                       initial.parameters, n.previous.parameters, trace, apply.weights = apply.weights)
     else
         best.solution
 }
 
 latentClassMaxDiff <- function(dat, alternative.names, ind.levels, resp.pars = NULL, n.classes = 1, seed = 123,
-                               initial.parameters = NULL, trace = 0, apply.weights = TRUE)
+                               initial.parameters = NULL, n.previous.parameters = 0, trace = 0, apply.weights = TRUE)
 {
     n.respondents <- length(dat$respondent.indices)
     n.levels <- length(ind.levels)
@@ -142,7 +157,8 @@ latentClassMaxDiff <- function(dat, alternative.names, ind.levels, resp.pars = N
     }
     result$coef = coef
     result$effective.sample.size <- ess <- sum(weights) / n.tasks
-    result$bic = -2*ll + log(ess) * n.parameters
+    result$n.parameters <- n.parameters + n.previous.parameters
+    result$bic = -2*ll + log(ess) * result$n.parameters
     class(result) <- "FitMaxDiff"
     result
 }
