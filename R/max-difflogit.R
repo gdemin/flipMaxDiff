@@ -179,6 +179,7 @@ latentClassMaxDiff <- function(dat, alternative.names, ind.levels, resp.pars = N
         n.parameters <- length(p)
         names(coef) <- dat$alternative.names
         probabilities <- exp(coef) / sum(exp(coef))
+        result$class.sizes <- 1
     }
     result$coef <- coef
     result$effective.sample.size <- ess <- sum(weights) / n.tasks
@@ -377,7 +378,12 @@ print.FitMaxDiff <- function(x, ...)
     {
         if (!is.null(x$covariates.notes))
             stop("Class table cannot be displayed when covariates are applied.")
-        col.labels <- paste("Class", 1:x$n.classes, "(%)<br>Size:", FormatAsPercent(x$class.sizes, 3))
-        MaxDiffTableClasses(as.matrix(x$probabilities), col.labels, title, "", footer)
+        col.labels <- c(paste("Class", 1:x$n.classes, "(%)<br>Size:", FormatAsPercent(x$class.sizes, 3)), "Total")
+        probabilities <- as.matrix(x$probabilities)
+        table.data <- matrix(NA, nrow(probabilities), ncol(probabilities) + 1)
+        rownames(table.data) <- rownames(probabilities)
+        table.data[, 1:ncol(probabilities)] <- probabilities
+        table.data[, ncol(probabilities) + 1] <- rowSums(probabilities * t(matrix(rep(x$class.sizes, nrow(probabilities)), ncol = nrow(probabilities))))
+        MaxDiffTableClasses(table.data, col.labels, title, "", footer)
     }
 }
