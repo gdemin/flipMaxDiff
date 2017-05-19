@@ -172,6 +172,12 @@ latentClassMaxDiff <- function(dat, alternative.names, ind.levels, resp.pars = N
         n.parameters <- prod(dim(coef[-1,])) + n.classes - 1
         result$class.sizes <- getClassWeights(p, n.classes, n.beta)
         probabilities <- exp(coef) / t(matrix(rep(colSums(exp(coef)), nrow(coef)), nrow = n.classes))
+        table.data <- matrix(NA, nrow(probabilities), ncol(probabilities) + 1)
+        colnames(table.data) <- c(paste("Class", 1:n.classes), "Total")
+        rownames(table.data) <- rownames(probabilities)
+        table.data[, 1:ncol(probabilities)] <- probabilities
+        table.data[, ncol(probabilities) + 1] <- rowSums(probabilities * t(matrix(rep(result$class.sizes, nrow(probabilities)), ncol = nrow(probabilities))))
+        probabilities <- table.data
     }
     else
     {
@@ -379,11 +385,6 @@ print.FitMaxDiff <- function(x, ...)
         if (!is.null(x$covariates.notes))
             stop("Class table cannot be displayed when covariates are applied.")
         col.labels <- c(paste("Class", 1:x$n.classes, "(%)<br>Size:", FormatAsPercent(x$class.sizes, 3)), "Total")
-        probabilities <- as.matrix(x$probabilities)
-        table.data <- matrix(NA, nrow(probabilities), ncol(probabilities) + 1)
-        rownames(table.data) <- rownames(probabilities)
-        table.data[, 1:ncol(probabilities)] <- probabilities
-        table.data[, ncol(probabilities) + 1] <- rowSums(probabilities * t(matrix(rep(x$class.sizes, nrow(probabilities)), ncol = nrow(probabilities))))
-        MaxDiffTableClasses(table.data, col.labels, title, "", footer)
+        MaxDiffTableClasses(as.matrix(x$probabilities), col.labels, title, "", footer)
     }
 }

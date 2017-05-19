@@ -44,7 +44,7 @@ test_that("Latent class", {
     q.probs <- structure(c(0.6118, 0.061, 0.0196, 0.1097, 0.0294, 0.0535, 0.0542,
                            0.0229, 0.0183, 0.0195, 0.0297, 0.1186, 0.0455, 0.1884, 0.0753,
                            0.2138, 0.1516, 0.0598, 0.0412, 0.076), .Dim = c(10L, 2L))
-    expect_equal(unname(result$probabilities), q.probs, tolerance = 0.001)
+    expect_equal(unname(result$probabilities[, 1:2]), q.probs, tolerance = 0.001)
 
     # Subset and weight
     sub <- unclass(tech.data$Q2) <= 3
