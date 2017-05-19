@@ -386,7 +386,7 @@ print.FitMaxDiff <- function(x, ...)
             "Covariates: none"
 
         # subtitle with covariates
-        resp.pars <- as.matrix(RespondentParameters(x))
+        resp.pars <- as.matrix(RespondentParameters(x))[x$subset, ]
         probs <- exp(resp.pars) / rowSums(exp(resp.pars))
         stats.table <- matrix(NA, nrow = ncol(probs), ncol = 1)
         for (i in 1:ncol(probs))
