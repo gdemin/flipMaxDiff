@@ -114,7 +114,6 @@ test_that("Varying coefficients", {
 
 test_that("Saving variables", {
     sub <- c(FALSE, FALSE, rep(TRUE, 100), rep(FALSE, 200))
-    sub <- rep(TRUE, 302)
     # Posterior probabilities.
     lc.3 <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, n.classes = 3, subset = sub)
     pp <- lc.3$posterior.probabilities[sub, ]

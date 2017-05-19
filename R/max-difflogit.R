@@ -54,7 +54,7 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, n.classe
             for (n.c in 1:n.levels)
             {
                 solution <- latentClassMaxDiff(dat, alternative.names, ind.levels, resp.pars, n.c, seed,
-                                   initial.parameters, n.previous.parameters, trace, apply.weights = apply.weights)
+                                               initial.parameters, n.previous.parameters, trace, apply.weights = apply.weights)
                 if (solution$bic < best.bic)
                 {
                     best.bic <- solution$bic
@@ -63,7 +63,7 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, n.classe
             }
             if (best.solution$n.classes > 1)
             {
-                resp.pars <- as.matrix(RespondentParameters(best.solution))
+                resp.pars <- as.matrix(RespondentParameters(best.solution))[dat$subset, ]
                 n.previous.parameters <- best.solution$n.parameters
                 covariates.notes[i] <- paste0(names(characteristics)[i], " - ", best.solution$n.classes, " classes")
             }
@@ -83,7 +83,7 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, n.classe
 
     result <- if (lc || is.null(characteristics))
         latentClassMaxDiff(dat, alternative.names, dat$respondent.indices, resp.pars, n.classes, seed,
-                       initial.parameters, n.previous.parameters, trace, apply.weights = apply.weights)
+                           initial.parameters, n.previous.parameters, trace, apply.weights = apply.weights)
     else
         best.solution
     if (sub.model.outputs)
@@ -157,11 +157,26 @@ latentClassMaxDiff <- function(dat, alternative.names, ind.levels, resp.pars = N
         respondent.pp[ind.levels[[l]], ] <- t(matrix(rep(pp[l, ], n.ind), ncol = n.ind))
     }
     respondent.pp <- respondent.pp[(1:n.respondents) * n.tasks, , drop = FALSE]
+    if (!is.null(dat$subset))
+    {
+        posterior.probabilities <- matrix(NA, length(dat$subset), n.classes)
+        posterior.probabilities[dat$subset, ] <- respondent.pp
+    }
+    else
+        posterior.probabilities <- respondent.pp
 
-    result <- list(posterior.probabilities = respondent.pp,
+    if (!is.null(dat$subset) && !is.null(resp.pars))
+    {
+        input.respondent.pars <- matrix(NA, length(dat$subset), ncol(resp.pars))
+        input.respondent.pars[dat$subset, ] <- resp.pars
+    }
+    else
+        input.respondent.pars <- resp.pars
+
+    result <- list(posterior.probabilities = posterior.probabilities,
                    log.likelihood = ll,
                    n.classes = n.classes,
-                   input.respondent.pars = resp.pars)
+                   input.respondent.pars = input.respondent.pars)
     if (n.classes > 1)
     {
         coef <- matrix(0, nrow = n.beta + 1, ncol = n.classes)
@@ -253,7 +268,8 @@ cleanAndCheckData <- function(design, version, best, worst, alternative.names, s
          n.alternatives = n.alternatives,
          n.tasks = n.tasks,
          respondent.indices = dat$respondent.indices,
-         characteristics = characteristics)
+         characteristics = characteristics,
+         subset = subset)
 }
 
 #' @importFrom stats cor optim
@@ -325,7 +341,13 @@ RespondentParameters <- function(object)
 Memberships <- function(object)
 {
     pp <- object$posterior.probabilities
-    .fun <- function(x) match(max(x), x)[1]
+    .fun <- function(x)
+    {
+        if (any(is.na(x)))
+            NA
+        else
+            match(max(x), x)[1]
+    }
     apply(pp, 1, .fun)
 }
 
@@ -384,4 +406,3 @@ print.FitMaxDiff <- function(x, ...)
         MaxDiffTableClasses(as.matrix(x$probabilities), col.labels, title, "", footer)
     }
 }
-
