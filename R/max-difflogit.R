@@ -332,7 +332,7 @@ Memberships <- function(object)
 #' \code{print.CorrespondenceAnalysis}
 #' @param x FitMaxDiff object.
 #' @param ... further arguments passed to or from other methods.
-#' @importFrom flipFormat MaxDiffTable MaxDiffTableClasses FormatAsPercent FormatWithDecimals
+#' @importFrom flipFormat HistTable MaxDiffTableClasses FormatAsPercent FormatWithDecimals
 #' @importFrom stats median quantile
 #' @export
 print.FitMaxDiff <- function(x, ...)
@@ -366,19 +366,15 @@ print.FitMaxDiff <- function(x, ...)
         # subtitle with covariates
         resp.pars <- as.matrix(RespondentParameters(x))
         probs <- exp(resp.pars) / rowSums(exp(resp.pars))
-        stats.table <- matrix(NA, nrow = ncol(probs), ncol = 6)
+        stats.table <- matrix(NA, nrow = ncol(probs), ncol = 1)
         for (i in 1:ncol(probs))
         {
             p <- probs[, i]
-            stats.table[i, 1] <- mean(p)
-            stats.table[i, 2] <- median(p)
-            stats.table[i, 3] <- quantile(p, 0.25)
-            stats.table[i, 4] <- quantile(p, 0.75)
-            stats.table[i, 5] <- min(p)
-            stats.table[i, 6] <- max(p)
+            stats.table[i, 1] <- FormatWithDecimals(mean(p, na.rm = TRUE) * 100, 1)
         }
-        rownames(stats.table) <- colnames(probs)
-        MaxDiffTable(stats.table, title, subtitle, footer)
+        colnames(stats.table) <- "Mean Probability (%)"
+
+        HistTable(100 * probs, title, subtitle, footer, stats.table)
     }
     else if (x$output == "Classes")
     {
@@ -388,3 +384,4 @@ print.FitMaxDiff <- function(x, ...)
         MaxDiffTableClasses(as.matrix(x$probabilities), col.labels, title, "", footer)
     }
 }
+
