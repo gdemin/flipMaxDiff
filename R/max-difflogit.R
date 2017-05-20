@@ -20,10 +20,12 @@
 #' @param lc Whether to run latent class step at the end if characteristics are supplied.
 #' no outputs, and 6 is the most detailed outputs.
 #' @param output Output type. Can be "Probabilities" or "Classes".
+#' @param tasks.left.out Number of tasks to leave out for cross-validation.
 #' @export
 FitMaxDiff <- function(design, version, best, worst, alternative.names, n.classes = 1,
                        subset = NULL, weights = NULL, characteristics = NULL, seed = 123,
-                       initial.parameters = NULL, trace = 0, sub.model.outputs = FALSE, lc = TRUE, output = "Probabilities")
+                       initial.parameters = NULL, trace = 0, sub.model.outputs = FALSE, lc = TRUE,
+                       output = "Probabilities", tasks.left.out = 0)
 {
     if (!is.null(weights) && !is.null(characteristics))
         stop("Weights are not able to be applied when characteristics are supplied")
@@ -32,13 +34,15 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, n.classe
 
     apply.weights <- is.null(characteristics)
 
-    dat <- cleanAndCheckData(design, version, best, worst, alternative.names, subset, weights, characteristics)
+    dat <- cleanAndCheckData(design, version, best, worst, alternative.names, subset, weights,
+                             characteristics, seed, tasks.left.out)
     n.respondents <- length(dat$respondent.indices)
-    n.tasks <- dat$n.tasks
+    n.tasks.in <- dat$n.tasks.in
     resp.pars <- NULL
     n.previous.parameters <- 0
     characteristics <- dat$characteristics
     covariates.notes <- NULL
+    covariates.chosen <- FALSE
     if (!is.null(characteristics))
     {
         resp.pars <- matrix(0, nrow = n.respondents, ncol = dat$n.alternatives)
@@ -46,7 +50,7 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, n.classe
         covariates.notes <- character(n.characteristics)
         for (i in 1:n.characteristics)
         {
-            ind.levels <- getLevelIndices(characteristics[[i]], n.tasks)
+            ind.levels <- getLevelIndices(characteristics[[i]], n.tasks.in)
             n.levels <- length(ind.levels)
             best.bic <- Inf
             best.solution <- NULL
@@ -66,6 +70,7 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, n.classe
                 resp.pars <- as.matrix(RespondentParameters(best.solution))[dat$subset, ]
                 n.previous.parameters <- best.solution$n.parameters
                 covariates.notes[i] <- paste0(names(characteristics)[i], " - ", best.solution$n.classes, " classes")
+                covariates.chosen <- TRUE
             }
             else
             {
@@ -84,21 +89,31 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, n.classe
     result <- if (lc || is.null(characteristics))
         latentClassMaxDiff(dat, alternative.names, dat$respondent.indices, resp.pars, n.classes, seed,
                            initial.parameters, n.previous.parameters, trace, apply.weights = apply.weights)
-    else
+    else if (covariates.chosen)
         best.solution
+    else
+        stop("No model applied. Choose different covariates or enable latent class analysis over respondents.")
+
+    result$in.sample.accuracy <- predictionAccuracy(result, dat$X.in, n.tasks.in, dat$subset)
+    result$out.sample.accuracy <- if (tasks.left.out > 0)
+        predictionAccuracy(result, dat$X.out, tasks.left.out, dat$subset)
+    else
+        NA
+
     if (sub.model.outputs)
         cat("Latent class analysis",
             "BIC:", result$bic,
             "LL:", result$log.likelihood,
             "Number of classes:", result$n.classes)
-    result$n.respondents <- n.respondents
+    result$n.respondents <- n.respondents # this should be the unfiltered number of respondents
     result$subset <- subset
     result$weights <- weights
-    result$n.tasks <- n.tasks
-    result$n.alternatives.per.task <- ncol(dat$X)
+    result$n.tasks <- dat$n.tasks
+    result$n.alternatives.per.task <- ncol(dat$X.in)
     result$covariates.notes <- covariates.notes
     result$output <- output
     result$lc <- lc
+    result$tasks.left.out <- tasks.left.out
     result
 }
 
@@ -108,11 +123,11 @@ latentClassMaxDiff <- function(dat, alternative.names, ind.levels, resp.pars = N
     n.respondents <- length(dat$respondent.indices)
     n.levels <- length(ind.levels)
     n.beta <- dat$n.alternatives - 1
-    n.tasks <- dat$n.tasks
-    n.choices <- ncol(dat$X)
-    X <- dat$X
+    n.tasks <- dat$n.tasks.in
+    n.choices <- ncol(dat$X.in)
+    X <- dat$X.in
     weights <- dat$weights
-    tol <- 0.00001
+    tol <- 0.0001
 
     boost <- if (is.null(resp.pars))
         matrix(0, nrow = n.respondents * n.tasks, ncol = n.choices)
@@ -211,67 +226,6 @@ latentClassMaxDiff <- function(dat, alternative.names, ind.levels, resp.pars = N
     result
 }
 
-#' @importFrom flipData CalibrateWeight CleanSubset CleanWeights
-#' @importFrom flipFormat TrimWhitespace
-cleanAndCheckData <- function(design, version, best, worst, alternative.names, subset = NULL, weights = NULL,
-                              characteristics = NULL)
-{
-    # Cleaning and checking data
-    n <- length(best[[1]])
-    n.tasks <- nrow(design)
-    if (missing(version))
-        version <- rep(1, n)
-    if (!is.null(weights))
-        weights <- CleanWeights(weights)
-    subset <- CleanSubset(subset, n)
-    if (is.null(version))
-        version <- rep(1, n)
-    version <- version[subset]
-    if (!is.null(weights))
-    {
-        weights <- weights[subset]
-        weights <- CalibrateWeight(weights)
-    }
-    weights <- if (is.null(weights))
-        rep(1, n.tasks * length(version))
-    else
-        rep(weights, each = n.tasks)
-    best <- as.data.frame(best[subset, ])
-    worst <- as.data.frame(worst[subset, ])
-    if (!("Version" %in% names(design)))
-        design <- cbind(Version = 1, design)
-    versions.in.variable <- sort(unique(version))
-    versions.in.design <- sort(unique(design$Version))
-    compare.version <- all.equal(versions.in.variable, versions.in.design)
-    if (is.character(compare.version))
-        stop("The 'design' and 'version' have incompatible version numbers.")
-    if (!("Task" %in% names(design)))
-        design <- cbind(Task = 1:n.tasks, design)
-    dat <- IntegrateDesignAndData(design, version, best, worst)
-    n.alternatives <- max(design[, -1:-2])
-    if (missing(alternative.names))
-        alternative.names <- paste("Alternative", 1:n.alternatives)
-    if (length(alternative.names) != n.alternatives)
-    {
-        alternative.names <- strsplit(alternative.names, ",")[[1]]
-        alternative.names <- TrimWhitespace(alternative.names)
-    }
-    if (length(alternative.names) != n.alternatives)
-        stop("The number of 'alternative.names' does not match the number of alternatives in the 'design'.")
-    if (!is.null(characteristics))
-        characteristics <- characteristics[subset, , drop = FALSE]
-
-    list(X = dat$X,
-         weights = weights,
-         alternative.names = alternative.names,
-         n = n,
-         n.alternatives = n.alternatives,
-         n.tasks = n.tasks,
-         respondent.indices = dat$respondent.indices,
-         characteristics = characteristics,
-         subset = subset)
-}
-
 #' @importFrom stats cor optim
 optimizeMaxDiff <- function(X, boost, weights, n.pars, trace = 0)
 {
@@ -308,6 +262,23 @@ gradientMaxDiff <- function(b, X, boost, weights)
     b[b < -100] = -100
     e.u <- exp(matrix(c(0, b)[X], ncol = ncol(X)) + boost)
     gradientBestWorst(e.u, X - 1, weights, length(b))
+}
+
+predictionAccuracy <- function(object, X, n.tasks, subset)
+{
+    score <- rep(NA, nrow(X))
+    resp.pars <- as.matrix(RespondentParameters(object)[subset, ])
+    for (i in 1:nrow(resp.pars))
+    {
+        pars <- resp.pars[i, ]
+        for (j in 1:n.tasks)
+        {
+            ind <- (i - 1) * n.tasks + j
+            u <- pars[X[ind, ]]
+            score[ind] <- all(u[1] > u[-1])
+        }
+    }
+    sum(score) / nrow(X)
 }
 
 #' \code{RespondentParameters}
@@ -367,26 +338,41 @@ print.FitMaxDiff <- function(x, ...)
         footer <- paste0(footer, "Weights have been applied; Effective sample size: ",
                          FormatWithDecimals(x$effective.sample.size, 2), "; ")
     footer <- paste0(footer, "Number of questions: ", x$n.tasks, "; ")
+    if (x$tasks.left.out > 0)
+    {
+        footer <- paste0(footer, "Questions used in estimation: ", x$n.tasks - x$tasks.left.out, "; ")
+        footer <- paste0(footer, "Questions left out: ", x$tasks.left.out, "; ")
+    }
     footer <- paste0(footer, "Alternatives per question: ", x$n.alternatives.per.task, "; ")
     footer <- paste0(footer, "Log-likelihood: ", FormatWithDecimals(x$log.likelihood, 2), "; ")
     footer <- paste0(footer, "BIC: ", FormatWithDecimals(x$bic, 2), "; ")
     if (!x$lc)
         footer <- paste0(footer, "Latent class analysis over respondents not applied; ")
+    else
+        footer <- paste0(footer, "Latent class analysis over respondents: ", x$n.classes, " classes; ")
+
+    subtitle <- if (!is.na(x$out.sample.accuracy))
+        paste0("Prediction accuracy (leave-", x$tasks.left.out , "-out cross-validation): ",
+               FormatAsPercent(x$out.sample.accuracy, 3))
+    else
+        paste0("Prediction accuracy (in-sample): ", FormatAsPercent(x$in.sample.accuracy, 3))
 
     if (x$n.classes == 1 && is.null(x$covariates.notes))
     {
         col.labels <- "Probabilities (%)"
-        MaxDiffTableClasses(as.matrix(x$probabilities), col.labels, title, "", footer)
+        MaxDiffTableClasses(as.matrix(x$probabilities), col.labels, title, subtitle, footer)
     }
     else if (x$output == "Probabilities")
     {
-        subtitle <- if (!is.null(x$covariates.notes))
-            paste0("Covariates: ", paste(x$covariates.notes, collapse = ", "))
+        if (!is.null(x$covariates.notes))
+            subtitle <- c(subtitle, paste0("Covariates: ", paste(x$covariates.notes, collapse = ", ")))
         else
-            "Covariates: none"
+            subtitle <- c(subtitle, "Covariates: none")
 
-        # subtitle with covariates
-        resp.pars <- as.matrix(RespondentParameters(x))[x$subset, ]
+        resp.pars <- if (!is.null(x$subset))
+            as.matrix(RespondentParameters(x))[x$subset, ]
+        else
+            as.matrix(RespondentParameters(x))
         probs <- exp(resp.pars) / rowSums(exp(resp.pars))
         stats.table <- matrix(NA, nrow = ncol(probs), ncol = 1)
         for (i in 1:ncol(probs))
@@ -404,6 +390,6 @@ print.FitMaxDiff <- function(x, ...)
         if (!is.null(x$covariates.notes))
             stop("Class table cannot be displayed when covariates are applied.")
         col.labels <- c(paste("Class", 1:x$n.classes, "(%)<br>Size:", FormatAsPercent(x$class.sizes, 3)), "Total")
-        MaxDiffTableClasses(as.matrix(x$probabilities), col.labels, title, "", footer)
+        MaxDiffTableClasses(as.matrix(x$probabilities), col.labels, title, subtitle, footer)
     }
 }

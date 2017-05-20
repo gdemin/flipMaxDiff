@@ -17,6 +17,7 @@ test_that("Estimating logit parameters", {
                  0.07025650843667, 0.1399245639353, 0.125033634106, 0.05690964591415,
                  0.04496150786246, 0.05707256807926)
     expect_equal(as.vector(result$probabilities), q.probs, tolerance = 0.0001)
+    expect_error(print(result), NA)
     # Subset
     sub <- unclass(tech.data$Q2) <= 3
     result = FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, subset = sub, alternative.names = names)
@@ -30,6 +31,12 @@ test_that("Estimating logit parameters", {
     expect_equal(result$log.likelihood, -804.218, tolerance = 0.00001)
 
     expect_error(print(result), NA)
+
+    # Cross validation
+    result <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, tasks.left.out = 2)
+    expect_error(print(result), NA)
+    result <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, subset = sub, weights = wgt, alternative.names = names, tasks.left.out = 2)
+    expect_error(print(result), NA)
 })
 
 test_that("Latent class", {
@@ -39,12 +46,13 @@ test_that("Latent class", {
                               -3.50897927456835, -3.44485235322318, 0, 1.38580057447584, 0.428462438590491,
                               1.84870129481078, 0.931693897342025, 1.97524268771123, 1.63144214440238,
                               0.701477372305963, 0.327266346090314, 0.941038167774774), .Dim = c(10L, 2L))
-    expect_equal(unname(result$coef), q.solution, tolerance = 0.001)
+    expect_equal(unname(result$coef), q.solution, tolerance = 0.01)
     expect_equal(result$log.likelihood, -4482.242, tolerance = 0.00001)
     q.probs <- structure(c(0.6118, 0.061, 0.0196, 0.1097, 0.0294, 0.0535, 0.0542,
                            0.0229, 0.0183, 0.0195, 0.0297, 0.1186, 0.0455, 0.1884, 0.0753,
                            0.2138, 0.1516, 0.0598, 0.0412, 0.076), .Dim = c(10L, 2L))
     expect_equal(unname(result$probabilities[, 1:2]), q.probs, tolerance = 0.001)
+    expect_error(print(result), NA)
 
     # Subset and weight
     sub <- unclass(tech.data$Q2) <= 3
@@ -68,6 +76,12 @@ test_that("Latent class", {
                                   alternative.names = names,
                                   n.classes = 2,
                                   output = "Classes")), NA)
+
+    # Cross validation
+    result <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, n.classes = 2, tasks.left.out = 3)
+    expect_error(print(result), NA)
+    result <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, n.classes = 2, weight = wgt, subset = sub, tasks.left.out = 3)
+    expect_error(print(result), NA)
 })
 
 test_that("Checking some of the inputs", {
@@ -94,7 +108,7 @@ test_that("Varying coefficients", {
     # Aggregate
     ll.aggregate <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, characteristics = NULL, n.classes = 1)$log.likelihood
     # Gender varying coefficient
-    ll.gender <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, characteristics = data.frame(tech.data$Q1), n.classes = 1, lc = FALSE)$log.likelihood
+    ll.gender <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, characteristics = data.frame(tech.data$Q1), n.classes = 1)$log.likelihood
     expect_equal(ll.gender, ll.aggregate)
     # Apple varying coefficient
     ll.apple <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, characteristics = data.frame(tech.data$Q3_01), n.classes = 1, lc = FALSE)$log.likelihood
@@ -108,7 +122,14 @@ test_that("Varying coefficients", {
     expect_true(ll.apple.boosting.1.class > ll.apple)
     expect_true(ll.apple.boosting.1.class > ll.aggregate)
 
-    expect_error(print(ll.apple.boosting.5.classes), NA)
+    # Cross validation
+    apple.boosting.2.class <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, characteristics = data.frame(tech.data$Q3_01), n.classes = 2, tasks.left.out = 1)
+    expect_error(print(apple.boosting.2.class), NA)
+
+    #Subset
+    sub <- unclass(tech.data$Q2) <= 3
+    result <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, characteristics = data.frame(tech.data$Q3_01), n.classes = 2, tasks.left.out = 4, subset = sub)
+    expect_error(print(result), NA)
 })
 
 

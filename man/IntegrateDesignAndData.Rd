@@ -4,7 +4,7 @@
 \alias{IntegrateDesignAndData}
 \title{\code{IntegrateDesignAndData}}
 \usage{
-IntegrateDesignAndData(design, version, best, worst)
+IntegrateDesignAndData(design, version, best, worst, seed, tasks.left.out = 0)
 }
 \arguments{
 \item{design}{A \code{data.frame}, where the first variable is called 'Version', the second is called 'Task',
@@ -17,6 +17,10 @@ for each task. The integers need to corresponde to the \code{design} vector of i
 the design shown to each respondent. Coerced to a matrix if a \code{data.frame}.}
 
 \item{worst}{A matrix of integers showing the choice of 'worst'.}
+
+\item{seed}{Seed for cross validation}
+
+\item{tasks.left.out}{Number of tasks to leave out for cross-validation.}
 }
 \description{
 A matrix where in each row, the first element is the 'best' choice and the last element is the

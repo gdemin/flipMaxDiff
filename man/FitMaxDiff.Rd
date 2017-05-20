@@ -7,7 +7,7 @@
 FitMaxDiff(design, version, best, worst, alternative.names, n.classes = 1,
   subset = NULL, weights = NULL, characteristics = NULL, seed = 123,
   initial.parameters = NULL, trace = 0, sub.model.outputs = FALSE,
-  lc = TRUE, output = "Probabilities")
+  lc = TRUE, output = "Probabilities", tasks.left.out = 0)
 }
 \arguments{
 \item{design}{A \code{data.frame}, where the first variable is called 'Version', the second is called 'Task',
@@ -44,6 +44,8 @@ used in the fitting process.}
 no outputs, and 6 is the most detailed outputs.}
 
 \item{output}{Output type. Can be "Probabilities" or "Classes".}
+
+\item{tasks.left.out}{Number of tasks to leave out for cross-validation.}
 }
 \description{
 Fits a latent class rank-ordered logit model with ties to a max-diff experiment.
