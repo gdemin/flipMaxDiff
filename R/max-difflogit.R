@@ -330,7 +330,10 @@ Memberships <- function(object)
 #' @export
 print.FitMaxDiff <- function(x, ...)
 {
-    title <- "Max-Diff: Latent Class Analysis"
+    title <- if (!is.null(x$covariates.notes))
+        "Max-Diff: Varying Coefficients"
+    else
+        "Max-Diff: Latent Class Analysis"
     footer <- paste0("n = ", x$n.respondents, "; ")
     if (!is.null(x$subset))
         footer <- paste0(footer, "Filters have been applied; ")
@@ -346,10 +349,15 @@ print.FitMaxDiff <- function(x, ...)
     footer <- paste0(footer, "Alternatives per question: ", x$n.alternatives.per.task, "; ")
     footer <- paste0(footer, "Log-likelihood: ", FormatWithDecimals(x$log.likelihood, 2), "; ")
     footer <- paste0(footer, "BIC: ", FormatWithDecimals(x$bic, 2), "; ")
-    if (!x$lc)
-        footer <- paste0(footer, "Latent class analysis over respondents not applied; ")
+    footer <- if (!x$lc)
+        paste0(footer, "Latent class analysis over respondents not applied; ")
     else
-        footer <- paste0(footer, "Latent class analysis over respondents: ", x$n.classes, " classes; ")
+    {
+        if (x$n.classes == 1)
+            paste0(footer, "Latent class analysis over respondents: ", x$n.classes, " class; ")
+        else
+            paste0(footer, "Latent class analysis over respondents: ", x$n.classes, " classes; ")
+    }
 
     subtitle <- if (!is.na(x$out.sample.accuracy))
         paste0("Prediction accuracy (leave-", x$tasks.left.out , "-out cross-validation): ",
@@ -366,8 +374,6 @@ print.FitMaxDiff <- function(x, ...)
     {
         if (!is.null(x$covariates.notes))
             subtitle <- c(subtitle, paste0("Covariates: ", paste(x$covariates.notes, collapse = ", ")))
-        else
-            subtitle <- c(subtitle, "Covariates: none")
 
         resp.pars <- if (!is.null(x$subset))
             as.matrix(RespondentParameters(x))[x$subset, ]
