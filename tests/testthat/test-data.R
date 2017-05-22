@@ -9,5 +9,11 @@ test_that("Reading data works", {
     worst = tech.data[, c("Q5a_right", "Q5b_right", "Q5c_right", "Q5d_right", "Q5e_right", "Q5f_right")]
     expect_error(IntegrateDesignAndData(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst), NA)
 
+    names <- c("Apple", "Microsoft", "IBM", "Google", "Intel", "Samsung", "Sony", "Dell", "Yahoo", "Nokia")
+    list.design = MaxDiffDesign(number.alternatives = 10, number.questions = 6, alternatives.per.question = 5, n.repeats = 1)
+    expect_error(cleanAndCheckData(design = list.design, best = best, worst = worst, alternative.names = names), NA)
+
+    binary.design = list.design$binary.design
+    expect_error(cleanAndCheckData(design = binary.design, best = best, worst = worst, alternative.names = names), NA)
 })
 

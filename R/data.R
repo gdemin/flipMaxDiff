@@ -71,6 +71,28 @@ IntegrateDesignAndData <- function(design, version, best, worst, seed, tasks.lef
 cleanAndCheckData <- function(design, version, best, worst, alternative.names, subset = NULL, weights = NULL,
                               characteristics = NULL, seed, tasks.left.out = 0)
 {
+    # Check for alternative formats of design, and coerce if not the standard
+
+    # Binary design
+    if (class(design) == "matrix")
+    {
+        if (class(design[1, 1]) == "logical")
+        {
+            design <- t(apply(design, 1, which))
+        } else if (length(which(!design %in% c(0,1))) == 0) {
+            design <- design == 1
+            design <- t(apply(design, 1, which))
+        }
+        design <- as.data.frame(design)
+        names(design) <- paste0("Alt.", 1:ncol(design))
+    } else if (class(design) == "list")
+    {
+        if (!is.null(design$design))
+            design <- as.data.frame(design$design)
+        else
+            stop("The design should be a data frame.")
+    }
+
     # Cleaning and checking data
     n <- length(best[[1]])
     n.tasks <- nrow(design)
