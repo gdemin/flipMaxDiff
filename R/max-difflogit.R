@@ -339,7 +339,7 @@ print.FitMaxDiff <- function(x, ...)
     else
         "Max-Diff: Latent Class Analysis"
     footer <- paste0("n = ", x$n.respondents, "; ")
-    if (!is.null(x$subset))
+    if (!is.null(x$subset) && !all(x$subset))
         footer <- paste0(footer, "Filters have been applied; ")
     if (!is.null(x$weights))
         footer <- paste0(footer, "Weights have been applied; Effective sample size: ",
