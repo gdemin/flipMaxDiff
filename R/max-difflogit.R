@@ -114,6 +114,10 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, n.classe
     result$output <- output
     result$lc <- lc
     result$tasks.left.out <- tasks.left.out
+
+    resp.pars <- as.matrix(RespondentParameters(result))[dat$subset, ]
+    result$respondent.probabilities <- exp(resp.pars) / rowSums(exp(resp.pars))
+
     result
 }
 
@@ -375,17 +379,10 @@ print.FitMaxDiff <- function(x, ...)
         if (!is.null(x$covariates.notes))
             subtitle <- c(subtitle, paste0("Covariates: ", paste(x$covariates.notes, collapse = ", ")))
 
-        resp.pars <- if (!is.null(x$subset))
-            as.matrix(RespondentParameters(x))[x$subset, ]
-        else
-            as.matrix(RespondentParameters(x))
-        probs <- exp(resp.pars) / rowSums(exp(resp.pars))
+        probs <- x$respondent.probabilities
         stats.table <- matrix(NA, nrow = ncol(probs), ncol = 1)
         for (i in 1:ncol(probs))
-        {
-            p <- probs[, i]
-            stats.table[i, 1] <- FormatWithDecimals(mean(p, na.rm = TRUE) * 100, 1)
-        }
+            stats.table[i, 1] <- FormatWithDecimals(mean(probs[, i], na.rm = TRUE) * 100, 1)
         colnames(stats.table) <- "Mean Probability (%)"
 
         HistTable(100 * probs, title = title, subtitle = subtitle, footer = footer,
