@@ -95,7 +95,18 @@ cleanAndCheckData <- function(design, version, best, worst, alternative.names, s
 
     # Cleaning and checking data
     n <- length(best[[1]])
-    n.tasks <- nrow(design)
+
+    if (!is.null(design$Version))
+    {
+        t <- table(design$Version)
+        if (!all(t == t[1]))
+            stop("Versions need to have the same number of tasks.")
+        else
+            n.tasks <- unname(t[1])
+    }
+    else
+        n.tasks <- nrow(design)
+
     if (missing(version))
         version <- rep(1, n)
     if (!is.null(weights))
