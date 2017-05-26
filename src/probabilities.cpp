@@ -54,13 +54,13 @@ NumericVector logDensitiesBestWorst(NumericMatrix e_u, NumericVector weights)
             double total = 0;
             for (int j = 0; j < n_choices; j++)
                 total += e_u(i, j);
-            result[i] = log(densities_p[i] * e_u(i, 0) / total) * weights[i];
+            result[i] = (log(densities_p[i]) + log(e_u(i, 0)) - log(total)) * weights[i];
         }
     }
     else if (n_choices == 2)
     {
         for (int i = 0; i < n; i++)
-            result[i] = log(e_u(i, 0) / (e_u(i, 0) + e_u(i, 1))) * weights[i];
+            result[i] = (log(e_u(i, 0)) - log(e_u(i, 0) + e_u(i, 1))) * weights[i];
     }
     return result;
 }
@@ -123,7 +123,7 @@ NumericVector gradientBestWorst(NumericMatrix e_u, IntegerMatrix x, NumericVecto
                         }
                     }
                     double tmp = e_u(i, j + 1) + e_u(i, last_index) + phi_dot_omega;
-                    dP_dOmega_selected(i, j) += sgn * e_u(i, last_index) / (tmp * tmp);
+                    dP_dOmega_selected(i, j) += sgn * (e_u(i, last_index) / tmp) / tmp;
                 }
             }
             phi = nextCombination(phi);
@@ -136,17 +136,16 @@ NumericVector gradientBestWorst(NumericMatrix e_u, IntegerMatrix x, NumericVecto
             for (int c = 1; c < last_index; c++)
             {
                 if (x(i, c) > 0)
-                    result[x(i, c) - 1] += dP_dOmega_selected(i, c - 1) * e_u(i, c) * weights[i] / densities_p[i];
+                    result[x(i, c) - 1] += (dP_dOmega_selected(i, c - 1) * e_u(i, c)) * weights[i] / densities_p[i];
             }
 
             // Gradient for worst item
             if (x(i, last_index) > 0)
             {
-                double dP_dOmega = 0;
+                double dP_dOmega_times_dn = 0;
                 for (int l = 0; l < n_selected; l++)
-                    dP_dOmega += e_u(i, l + 1) * dP_dOmega_selected(i, l);
-                dP_dOmega /= -e_u(i, last_index);
-                result[x(i, last_index) - 1] += dP_dOmega * e_u(i, last_index) * weights[i] / densities_p[i];
+                    dP_dOmega_times_dn += e_u(i, l + 1) * dP_dOmega_selected(i, l);
+                result[x(i, last_index) - 1] += -dP_dOmega_times_dn * weights[i] / densities_p[i];
             }
         }
     }
@@ -156,7 +155,7 @@ NumericVector gradientBestWorst(NumericMatrix e_u, IntegerMatrix x, NumericVecto
         for (int i = 0; i < n; i++)
         {
             double tmp = e_u(i, 1) + e_u(i, 2);
-            double gr = e_u(i, 1) * e_u(i, 2) * weights[i] / (tmp * tmp * densities_p[i]);
+            double gr = (e_u(i, 1) / tmp) * (e_u(i, 2) / tmp) * weights[i] / densities_p[i];
             if (x(i, 1) > 0)
                 result[x(i, 1) - 1] += gr;
             if (x(i, 2) > 0)
