@@ -47,3 +47,30 @@ test_that("design",
                             n.repeats = 1)))
 })
 
+
+
+test_that("Individual-level design",
+{
+    expect_error(MaxDiffDesign(number.alternatives = 10,
+                            number.questions = 6,
+                            alternatives.per.question = 5,
+                            n.versions = 2,
+                            n.repeats = 1), NA)
+
+        expect_error(suppressWarnings(MaxDiffDesign(number.alternatives = 10,
+                            number.questions = 6,
+                            alternatives.per.question = 4,
+                            n.versions = 100,
+                            n.repeats = 1)), NA)
+        expect_error(suppressWarnings(MaxDiffDesign(number.alternatives = 100,
+                            number.questions = 10,
+                            alternatives.per.question = 4,
+                            n.versions = 100,
+                            n.repeats = 1)))
+
+        expect_error(suppressWarnings(MaxDiffDesign(number.alternatives = 30,
+                            number.questions = 10,
+                            alternatives.per.question = 4,
+                            n.versions = 100,
+                            n.repeats = 1)), NA)
+})
