@@ -4,15 +4,16 @@
 \alias{IntegrateDesignAndData}
 \title{\code{IntegrateDesignAndData}}
 \usage{
-IntegrateDesignAndData(design, version, best, worst, seed, tasks.left.out = 0)
+IntegrateDesignAndData(design, version, best, worst, seed,
+  questions.left.out = 0)
 }
 \arguments{
-\item{design}{A \code{data.frame}, where the first variable is called 'Version', the second is called 'Task',
-and the remaining variables contain the alternatives shown in each tas.}
+\item{design}{A \code{data.frame}, where the first variable is called 'Version', the second is called 'Question',
+and the remaining variables contain the alternatives shown in each question.}
 
 \item{version}{A vector of integers showing the version of the design shown to each respondent.}
 
-\item{best}{Amatrix of integers showing the choices made by each respondent on each of the tasks. One column
+\item{best}{Amatrix of integers showing the choices made by each respondent on each of the questions. One column
 for each task. The integers need to correspond to the \code{design} vector of integers showing the version of
 the design shown to each respondent. Coerced to a matrix if a \code{data.frame}.}
 
@@ -20,9 +21,7 @@ the design shown to each respondent. Coerced to a matrix if a \code{data.frame}.
 
 \item{seed}{Seed for cross validation}
 
-\item{tasks.left.out}{Number of tasks to leave out for cross-validation.}
-
-\item{names}{The names usedof the alterantives.}
+\item{questions.left.out}{Number of questions to leave out for cross-validation.}
 }
 \description{
 A matrix where in each row, the first element is the 'best' choice and the last element is the

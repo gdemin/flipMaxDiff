@@ -7,7 +7,8 @@
 #' for each task. The integers need to correspond to the \code{design} vector of integers showing the version of
 #' the design shown to each respondent. Coerced to a matrix if a \code{data.frame}.
 #' @param worst As with 'best', except denoting worst..
-#' @param worst A matrix of integers showing the choice of 'worst'.
+#' @param alternative.names A \code{character} vector of the alternative names. Where \code{best}
+#' and  \code{worst} are factors or characters, these names must match them.
 #' @param n.classes The number of latent classes.
 #' @param subset An optional vector specifying a subset of observations to be
 #'   used in the fitting process.
@@ -94,7 +95,7 @@ FitMaxDiff <- function(design, version = NULL, best, worst, alternative.names, n
     else
         stop("No model applied. Choose different covariates or enable latent class analysis over respondents.")
 
-    in.sample.accuracies <- predictionAccuracies(result, dat$X.in, n.tasks.in, dat$subset)
+    in.sample.accuracies <- predictionAccuracies(result, dat$X.in, n.questions.in, dat$subset)
     result$in.sample.accuracy <- mean(in.sample.accuracies)
     if (tasks.left.out > 0)
     {
@@ -274,7 +275,9 @@ gradientMaxDiff <- function(b, X, boost, weights)
     gradientBestWorst(e.u, X - 1, weights, length(b))
 }
 
+predictionAccuracies <- function(object, X, n.questions, subset)
 {
+    score <- rep(NA, nrow(X))
     resp.pars <- as.matrix(RespondentParameters(object)[subset, ])
     n.respondents <- nrow(resp.pars)
     result <- rep(NA, n.respondents)

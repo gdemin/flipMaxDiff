@@ -17,7 +17,6 @@ test_that("Estimating logit parameters", {
                  0.07025650843667, 0.1399245639353, 0.125033634106, 0.05690964591415,
                  0.04496150786246, 0.05707256807926)
     expect_equal(as.vector(result$probabilities), q.probs, tolerance = 0.0001)
-    expect_error(print(result), NA)
     # Subset
     sub <- unclass(tech.data$Q2) <= 3
     result = FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, subset = sub, alternative.names = names)
@@ -30,12 +29,6 @@ test_that("Estimating logit parameters", {
     expect_equal(as.vector(result$coef), q.solution, tolerance = 0.00001)
     expect_equal(result$log.likelihood, -804.218, tolerance = 0.00001)
 
-    expect_error(print(result), NA)
-
-    # Cross validation
-    result <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, tasks.left.out = 2)
-    expect_error(print(result), NA)
-    result <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, subset = sub, weights = wgt, alternative.names = names, tasks.left.out = 2)
     expect_error(print(result), NA)
 })
 
@@ -52,7 +45,6 @@ test_that("Latent class", {
                            0.0229, 0.0183, 0.0195, 0.0297, 0.1186, 0.0455, 0.1884, 0.0753,
                            0.2138, 0.1516, 0.0598, 0.0412, 0.076), .Dim = c(10L, 2L))
     expect_equal(unname(result$probabilities[, 1:2]), q.probs, tolerance = 0.001)
-    expect_error(print(result), NA)
 
     # Subset and weight
     sub <- unclass(tech.data$Q2) <= 3
@@ -76,12 +68,6 @@ test_that("Latent class", {
                                   alternative.names = names,
                                   n.classes = 2,
                                   output = "Classes")), NA)
-
-    # Cross validation
-    result <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, n.classes = 2, tasks.left.out = 3)
-    expect_error(print(result), NA)
-    result <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, n.classes = 2, weight = wgt, subset = sub, tasks.left.out = 3)
-    expect_error(print(result), NA)
 })
 
 test_that("Checking some of the inputs", {
@@ -99,17 +85,19 @@ test_that("Checking some of the inputs", {
     des$Version <- 3
     expect_error(FitMaxDiff(design = des, best = best, worst = worst, alternative.names = names))
     # No names
-    expect_error(FitMaxDiff(design = tech.design, best = best, worst = worst), NA)
+    expect_error(FitMaxDiff(design = tech.design, best = best, worst = worst))
+    # Incorrect names as a string
+    expect_error(FitMaxDiff(design = tech.design, best = best, worst = worst, alternative.names = "A, B, C, D,E,F,G,h,I, J"))
     # Correct names as a string
-    expect_error(FitMaxDiff(design = tech.design, best = best, worst = worst, alternative.names = "A, B, C, D,E,F,G,h,I, J"), NA)
+    nms = paste(names, collapse = ", ")
+    expect_error(FitMaxDiff(design = tech.design, best = best, worst = worst, alternative.names = nms), NA)
 })
 
 test_that("Varying coefficients", {
     # Aggregate
     ll.aggregate <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, characteristics = NULL, n.classes = 1)$log.likelihood
     # Gender varying coefficient
-    ll.gender <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, characteristics = data.frame(tech.data$Q1), n.classes = 1)$log.likelihood
-    expect_equal(ll.gender, ll.aggregate)
+    expect_error(FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, characteristics = data.frame(tech.data$Q1), n.classes = 1, lc = FALSE))
     # Apple varying coefficient
     ll.apple <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, characteristics = data.frame(tech.data$Q3_01), n.classes = 1, lc = FALSE)$log.likelihood
     expect_true(ll.apple > ll.aggregate)
@@ -122,14 +110,7 @@ test_that("Varying coefficients", {
     expect_true(ll.apple.boosting.1.class > ll.apple)
     expect_true(ll.apple.boosting.1.class > ll.aggregate)
 
-    # Cross validation
-    apple.boosting.2.class <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, characteristics = data.frame(tech.data$Q3_01), n.classes = 2, tasks.left.out = 1)
-    expect_error(print(apple.boosting.2.class), NA)
-
-    #Subset
-    sub <- unclass(tech.data$Q2) <= 3
-    result <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names, characteristics = data.frame(tech.data$Q3_01), n.classes = 2, tasks.left.out = 4, subset = sub)
-    expect_error(print(result), NA)
+    expect_error(print(ll.apple.boosting.5.classes), NA)
 })
 
 
@@ -149,60 +130,5 @@ test_that("Saving variables", {
     expect_equal(sum(m), sum(sub))
 })
 
-test_that("Check no errors for designs generated by MaxDiffDesign", {
-    tech.data = suppressWarnings(foreign::read.spss("http://wiki.q-researchsoftware.com/images/f/f1/Technology_2017.sav", to.data.frame = TRUE))
-    tech.design = read.csv("http://wiki.q-researchsoftware.com/images/7/78/Technology_MaxDiff_Design.csv")
-    best = tech.data[, c("Q5a_left", "Q5b_left", "Q5c_left", "Q5d_left", "Q5e_left", "Q5f_left")]
-    worst = tech.data[, c("Q5a_right", "Q5b_right", "Q5c_right", "Q5d_right", "Q5e_right", "Q5f_right")]
-    names <- c("Apple", "Microsoft", "IBM", "Google", "Intel", "Samsung", "Sony", "Dell", "Yahoo", "Nokia")
-    list.design = MaxDiffDesign(number.alternatives = 10, number.questions = 6, alternatives.per.question = 5, n.repeats = 1)
-
-    expect_error(FitMaxDiff(design = list.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names), NA)
-
-    expect_error(FitMaxDiff(design = list.design$design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names), NA)
-
-    version.design = MaxDiffDesign(number.alternatives = 10, number.questions = 6, alternatives.per.question = 5,n.versions = 10, n.repeats = 1)
-    expect_error(FitMaxDiff(design = version.design$versions.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names), NA)
-
-    binary.design = list.design$binary.design
-    expect_error(FitMaxDiff(design = binary.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names), NA)
-
-    logical.design = binary.design == 1
-    expect_error(FitMaxDiff(design = logical.design, version = rep(1, nrow(best)), best = best, worst = worst, alternative.names = names), NA)
-
-})
-
-design.2 <- structure(list(Version = c(1L, 1L, 1L, 1L, 1L, 1L, 2L, 2L, 2L, 2L, 2L, 2L), Task = 1:12,
-                           Alt..1 = c(1L, 1L, 2L, 3L, 2L, 1L, 1L, 1L, 2L, 3L, 2L, 1L),
-                           Alt..2 = c(2L, 7L, 5L, 4L, 4L, 3L, 2L, 7L, 5L, 4L, 4L, 3L),
-                           Alt..3 = c(3L, 8L, 6L, 5L, 6L, 5L, 3L, 8L, 6L, 5L, 6L, 5L),
-                           Alt..4 = c(4L, 9L, 7L, 7L, 8L, 6L, 4L, 9L, 7L, 7L, 8L, 6L),
-                           Alt..5 = c(10L, 10L, 10L, 8L, 9L, 9L, 10L, 10L, 10L, 8L, 9L, 9L)),
-                      .Names = c("Version", "Task", "Alt..1", "Alt..2", "Alt..3",
-                                 "Alt..4", "Alt..5"), class = "data.frame", row.names = c(NA, -12L))
-version <- as.numeric(tech.data$Q1)
-test_that("Design versions", {
-    expect_error(FitMaxDiff(design = design.2, version = version, best = best, worst = worst, alternative.names = names), NA)
-})
-
-
-
-
-test_that("Alternative ways of specifying a design", {
-    # Reading in Trump design.
-    pres.design <- read.csv("http://wiki.q-researchsoftware.com/images/9/9d/PresidentialDesign.csv")
-    # Reading in Trump data.
-    pres.data <- suppressWarnings(foreign::read.spss("http://wiki.q-researchsoftware.com/images/6/61/President.sav", to.data.frame = TRUE))
-    best <- pres.data[, c("MDmost_1", "MDmost_2", "MDmost_3", "MDmost_4", "MDmost_5", "MDmost_6", "MDmost_7", "MDmost_8",  "MDmost_9", "MDmost_10")]
-    worst <- pres.data[, c("MDleast_1", "MDleast_2", "MDleast_3", "MDleast_4", "MDleast_5", "MDleast_6", "MDleast_7", "MDleast_8",  "MDleast_9", "MDleast_10")]
-    names = c("Decent/ethical","Plain-speaking","Healthy","Successful in business","Good in a crisis","Experienced in government","Concerned for the welfare of minorities","Understands economics","Concerned about global warming","Concerned about poverty","Has served in the military","Multilingual","Entertaining","Male","From a traditional American background","Christian")
-   # z =
-       FitMaxDiff(design = pres.design, version = pres.data$MDversion, best = best, worst = worst, alternative.names = names, n.classes = 3)
-#
-#     z <- unlist(best)
-#     match(best, names)
-#
-
-})
 
 
