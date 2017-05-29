@@ -68,9 +68,9 @@ test_that("Individual-level design",
                             n.versions = 100,
                             n.repeats = 1)))
 
-        expect_error(suppressWarnings(MaxDiffDesign(number.alternatives = 30,
+        expect_error(capture.output(suppressWarnings(MaxDiffDesign(number.alternatives = 30,
                             number.questions = 10,
                             alternatives.per.question = 4,
                             n.versions = 100,
-                            n.repeats = 1)), NA)
+                            n.repeats = 1))), NA)
 })

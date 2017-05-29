@@ -38,6 +38,8 @@ MaxDiffDesign <- function(number.alternatives, number.questions, alternatives.pe
 
 
 #' \code{multipleVersionDesign}
+#' @param original The experiment design that is randomized to individual-level vesions.
+#' @param n.versions The number of versions of the experimental design (defaults to 1). Subsequent versions are obtained by permutting the columns of the binary design.
 multipleVersionDesign <- function(original, n.versions)
 {
     binary.design <- original$binary.design
