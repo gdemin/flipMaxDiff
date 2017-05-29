@@ -94,11 +94,18 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, n.classe
     else
         stop("No model applied. Choose different covariates or enable latent class analysis over respondents.")
 
-    result$in.sample.accuracy <- predictionAccuracy(result, dat$X.in, n.tasks.in, dat$subset)
-    result$out.sample.accuracy <- if (tasks.left.out > 0)
-        predictionAccuracy(result, dat$X.out, tasks.left.out, dat$subset)
+    in.sample.accuracies <- predictionAccuracies(result, dat$X.in, n.tasks.in, dat$subset)
+    result$in.sample.accuracy <- mean(in.sample.accuracies)
+    if (tasks.left.out > 0)
+    {
+        result$prediction.accuracies <- predictionAccuracies(result, dat$X.out, tasks.left.out, dat$subset)
+        result$out.sample.accuracy <- mean(result$prediction.accuracies)
+    }
     else
-        NA
+    {
+        result$prediction.accuracies <- in.sample.accuracies
+        result$out.sample.accuracy <- NA
+    }
 
     if (sub.model.outputs)
         cat("Latent class analysis",
@@ -268,21 +275,24 @@ gradientMaxDiff <- function(b, X, boost, weights)
     gradientBestWorst(e.u, X - 1, weights, length(b))
 }
 
-predictionAccuracy <- function(object, X, n.tasks, subset)
+predictionAccuracies <- function(object, X, n.tasks, subset)
 {
-    score <- rep(NA, nrow(X))
     resp.pars <- as.matrix(RespondentParameters(object)[subset, ])
-    for (i in 1:nrow(resp.pars))
+    n.respondents <- nrow(resp.pars)
+    result <- rep(NA, n.respondents)
+    for (i in 1:n.respondents)
     {
         pars <- resp.pars[i, ]
+        score <- rep(NA, n.tasks)
         for (j in 1:n.tasks)
         {
             ind <- (i - 1) * n.tasks + j
             u <- pars[X[ind, ]]
-            score[ind] <- all(u[1] > u[-1])
+            score[j] <- all(u[1] > u[-1])
         }
+        result[i] <- mean(score)
     }
-    sum(score) / nrow(X)
+    result
 }
 
 #' \code{RespondentParameters}
