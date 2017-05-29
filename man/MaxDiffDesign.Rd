@@ -12,7 +12,7 @@ MaxDiffDesign(number.alternatives, number.questions, alternatives.per.question,
 
 \item{number.questions}{The number of max-diff questions to show to respondents. Sawtooth Software suggests that a rough guideline is: \code{Number of questions >= 3 * Number of alternatives / Alternatives per question}.}
 
-\item{alternatives.per.question}{For example, if you have a study of 10 brands, and in each question you show five brands, asking the respondent to choose the one of the five that they like the most and the one that they like the least, then \code{Alternatives per question = 5}.}
+\item{alternatives.per.question}{For example, if you have a study of 10 brands, and in each question you show five brands, asking the respondent to choose the one of the five that they like the most and the one that they like the least, then \code{Alternatives per question = 5}. That is, the number of options shown in each question.}
 
 \item{n.versions}{The number of versions of the experimental design (defaults to 1). Subsequent versions are obtained by permutting the columns of the binary design.}
 
