@@ -196,12 +196,13 @@ test_that("Alternative ways of specifying a design", {
     best <- pres.data[, c("MDmost_1", "MDmost_2", "MDmost_3", "MDmost_4", "MDmost_5", "MDmost_6", "MDmost_7", "MDmost_8",  "MDmost_9", "MDmost_10")]
     worst <- pres.data[, c("MDleast_1", "MDleast_2", "MDleast_3", "MDleast_4", "MDleast_5", "MDleast_6", "MDleast_7", "MDleast_8",  "MDleast_9", "MDleast_10")]
     names = c("Decent/ethical","Plain-speaking","Healthy","Successful in business","Good in a crisis","Experienced in government","Concerned for the welfare of minorities","Understands economics","Concerned about global warming","Concerned about poverty","Has served in the military","Multilingual","Entertaining","Male","From a traditional American background","Christian")
-   z =  FitMaxDiff(design = pres.design, version = pres.data$MDversion, best = best, worst = worst, alternative.names = names, n.classes = 3)
+   # z =
+       FitMaxDiff(design = pres.design, version = pres.data$MDversion, best = best, worst = worst, alternative.names = names, n.classes = 3)
+#
+#     z <- unlist(best)
+#     match(best, names)
+#
 
-    z <- unlist(best)
-    match(best, names)
-
-
-}
+})
 
 
