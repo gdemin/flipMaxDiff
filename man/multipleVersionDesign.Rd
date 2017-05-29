@@ -6,6 +6,11 @@
 \usage{
 multipleVersionDesign(original, n.versions)
 }
+\arguments{
+\item{original}{The experiment design that is randomized to individual-level vesions.}
+
+\item{n.versions}{The number of versions of the experimental design (defaults to 1). Subsequent versions are obtained by permutting the columns of the binary design.}
+}
 \description{
 \code{multipleVersionDesign}
 }
