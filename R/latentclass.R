@@ -29,7 +29,8 @@ inferParameters <- function(class.memberships, X, boost, weights, ind.levels, n.
         class.weights <- vector("numeric", nrow(X))
         for (l in 1:n.levels)
             class.weights[ind.levels[[l]]] <- class.memberships[l, c]
-        class.weights <- class.weights * weights
+        if (!is.null(weights))
+            class.weights <- class.weights * weights
         solution <- optimizeMaxDiff(X, boost, class.weights, n.beta, trace)
         res[((c - 1) * n.beta + 1):(c * n.beta)] <- solution$par
     }

@@ -43,7 +43,7 @@ MaxDiffDesign <- function(number.alternatives, number.questions, alternatives.pe
 multipleVersionDesign <- function(original, n.versions)
 {
     binary.design <- original$binary.design
-    n.alternatives <- ncol(binary.design)
+    number.alternatives <- ncol(binary.design)
     # Creating an array to store the outputs
     if (is.matrix(original))
        stop("Select 'Detailed outputs' on the experimental design.")
@@ -53,27 +53,28 @@ multipleVersionDesign <- function(original, n.versions)
     cnames <- paste0("Alt. ", colnames(original$design))
     randomized.designs <- matrix(NA,
          nrow = nrows, ncol = 2 + alternatives.per.question,
-         dimnames = list(1:nrows, Alternative = c("Version", "Task", cnames)))
+         dimnames = list(1:nrows, Alternative = c("Version", "Question", cnames)))
     randomized.designs[, 1] <- rep(1:n.versions, each = number.questions)
     randomized.designs[, 2] <- rep(1:number.questions)
     randomized.designs[1:number.questions, -1:-2] <- original$design
-    big.binary.design <- matrix(NA, nrows, n.alternatives, dimnames = list(1:nrows, colnames(binary.design)))
+    big.binary.design <- matrix(NA, nrows, number.alternatives, dimnames = list(1:nrows, colnames(binary.design)))
     big.binary.design[1:number.questions, ] <- binary.design
     # Randomly rearranging the columns.
     set.seed(1223)
     for (i in 2:n.versions)
     {
         rows <- (i - 1) * number.questions + 1:number.questions
-        d <- binary.design[, sample(1:n.alternatives, n.alternatives, replace = FALSE)]
+        d <- binary.design[, sample(1:number.alternatives, number.alternatives, replace = FALSE)]
         big.binary.design[rows, ] <- d
         d <- t(d)
         design <- matrix(row(d)[d == 1], byrow = TRUE, ncol = alternatives.per.question)
         randomized.designs[rows, -1:-2] <- design
     }
     # Summmary statistics
-    cors <- cor(big.binary.design)
+    correlations <- round(cor(big.binary.design), 2)
     pairwise.frequencies <- crossprod(big.binary.design)
-    list(versions.binary.correlations = cors,
+    dimnames(pairwise.frequencies) <- dimnames(correlations) <- list(Alternative = 1:number.alternatives, Alternative = 1:number.alternatives)
+    list(versions.binary.correlations = correlations,
          versions.pairwise.frequencies = pairwise.frequencies,
          versions.design = randomized.designs)
 }
@@ -101,7 +102,7 @@ CheckMaxDiffDesign <- function(design)
         warning(paste0("One or more of your alternatives appears only ", min.a, " two times. A common recommendation is that each alternative should appear 3 times. You can review the frequencies by viewing the detailed outputs."))
     if (min.a != max(n.appearances.per.alternative))
         warning(paste0("Your design is not balanced. That is, some alternatives appear more frequently than others. You can review the frequencies by viewing the detailed outputs."))
-    correlations <- round(cor(binary.design),2)
+    correlations <- round(cor(binary.design), 2)
     cors <- abs(correlations[lower.tri(correlations)])
     cor.max  <- max(cors, na.rm = TRUE)
     cor.min <- min(cors, na.rm = TRUE)
@@ -118,6 +119,7 @@ CheckMaxDiffDesign <- function(design)
     appearance.ratios <- sweep(pairwise.frequencies, 1, n.appearances.per.alternative, "/")
     if (any(appearance.ratios[lower.tri(appearance.ratios)] == 1))
         warning(paste0("Some alternatives only ever appear together. You can review the pairwise frequencies by viewing the detailed outputs."))
+    dimnames(pairwise.frequencies) <- dimnames(correlations) <- list(Alternative = 1:number.alternatives, Alternative = 1:number.alternatives)
     list(binary.design = binary.design,
          design = design,
          frequencies = n.appearances.per.alternative,

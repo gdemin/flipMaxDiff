@@ -12,15 +12,17 @@ and the remaining variables contain the alternatives shown in each tas.}
 
 \item{version}{A vector of integers showing the version of the design shown to each respondent.}
 
-\item{best}{A matrix of integers showing the choices made by each respondent on each of the tasks. One column
-for each task. The integers need to corresponde to the \code{design} vector of integers showing the version of
+\item{best}{Amatrix of integers showing the choices made by each respondent on each of the tasks. One column
+for each task. The integers need to correspond to the \code{design} vector of integers showing the version of
 the design shown to each respondent. Coerced to a matrix if a \code{data.frame}.}
 
-\item{worst}{A matrix of integers showing the choice of 'worst'.}
+\item{worst}{As with 'best', except denoting worst..}
 
 \item{seed}{Seed for cross validation}
 
 \item{tasks.left.out}{Number of tasks to leave out for cross-validation.}
+
+\item{names}{The names usedof the alterantives.}
 }
 \description{
 A matrix where in each row, the first element is the 'best' choice and the last element is the

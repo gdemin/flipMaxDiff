@@ -7,13 +7,19 @@ test_that("Reading data works", {
 
     best = tech.data[, c("Q5a_left", "Q5b_left", "Q5c_left", "Q5d_left", "Q5e_left", "Q5f_left")]
     worst = tech.data[, c("Q5a_right", "Q5b_right", "Q5c_right", "Q5d_right", "Q5e_right", "Q5f_right")]
-    expect_error(IntegrateDesignAndData(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst), NA)
+    # expect_error(IntegrateDesignAndData(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst), NA)
 
     names <- c("Apple", "Microsoft", "IBM", "Google", "Intel", "Samsung", "Sony", "Dell", "Yahoo", "Nokia")
     list.design = MaxDiffDesign(number.alternatives = 10, number.questions = 6, alternatives.per.question = 5, n.repeats = 1)
+    expect_error(cleanAndCheckData(design = list.design, best = best, worst = worst, alternative.names = names))
+    list.design$design <- tech.design
     expect_error(cleanAndCheckData(design = list.design, best = best, worst = worst, alternative.names = names), NA)
 
     binary.design = list.design$binary.design
+    binary.design[binary.design == 1] <- 0
+    for (r in 1:nrow(binary.design))
+        for (c in 1:5)
+            binary.design[r, c] = tech.design[r, c + 2]
     expect_error(cleanAndCheckData(design = binary.design, best = best, worst = worst, alternative.names = names), NA)
 })
 

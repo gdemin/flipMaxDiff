@@ -1,13 +1,13 @@
 #' \code{FitMaxDiff}
 #' @description Fits a latent class rank-ordered logit model with ties to a max-diff experiment.
-#' @param design A \code{data.frame}, where the first variable is called 'Version', the second is called 'Task',
+#' @param design A \code{data.frame}, where the first variable is called 'Version', the second is called 'Task' or 'Question',
 #' and the remaining variables contain the alternatives shown in each task.
 #' @param version A vector of integers showing the version of the design shown to each respondent.
-#' @param best A matrix of integers showing the choices made by each respondent on each of the tasks. One column
-#' for each task. The integers need to corresponde to the \code{design} vector of integers showing the version of
+#' @param best A data frame of factors or a matrix of integers showing the choices made by each respondent on each of the tasks. One column
+#' for each task. The integers need to correspond to the \code{design} vector of integers showing the version of
 #' the design shown to each respondent. Coerced to a matrix if a \code{data.frame}.
+#' @param worst As with 'best', except denoting worst..
 #' @param worst A matrix of integers showing the choice of 'worst'.
-#' @param alternative.names A character vector names of the alternatives. If only a single element is supplied, it is split by commas.
 #' @param n.classes The number of latent classes.
 #' @param subset An optional vector specifying a subset of observations to be
 #'   used in the fitting process.
@@ -22,7 +22,7 @@
 #' @param output Output type. Can be "Probabilities" or "Classes".
 #' @param tasks.left.out Number of tasks to leave out for cross-validation.
 #' @export
-FitMaxDiff <- function(design, version, best, worst, alternative.names, n.classes = 1,
+FitMaxDiff <- function(design, version = NULL, best, worst, alternative.names, n.classes = 1,
                        subset = NULL, weights = NULL, characteristics = NULL, seed = 123,
                        initial.parameters = NULL, trace = 0, sub.model.outputs = FALSE, lc = TRUE,
                        output = "Probabilities", tasks.left.out = 0)
@@ -37,7 +37,7 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, n.classe
     dat <- cleanAndCheckData(design, version, best, worst, alternative.names, subset, weights,
                              characteristics, seed, tasks.left.out)
     n.respondents <- length(dat$respondent.indices)
-    n.tasks.in <- dat$n.tasks.in
+    n.questions.in <- dat$n.questions.in
     resp.pars <- NULL
     n.previous.parameters <- 0
     characteristics <- dat$characteristics
@@ -50,7 +50,7 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, n.classe
         covariates.notes <- character(n.characteristics)
         for (i in 1:n.characteristics)
         {
-            ind.levels <- getLevelIndices(characteristics[[i]], n.tasks.in)
+            ind.levels <- getLevelIndices(characteristics[[i]], n.questions.in)
             n.levels <- length(ind.levels)
             best.bic <- Inf
             best.solution <- NULL
@@ -94,7 +94,7 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, n.classe
     else
         stop("No model applied. Choose different covariates or enable latent class analysis over respondents.")
 
-    result$in.sample.accuracy <- predictionAccuracy(result, dat$X.in, n.tasks.in, dat$subset)
+    result$in.sample.accuracy <- predictionAccuracy(result, dat$X.in, n.questions.in, dat$subset)
     result$out.sample.accuracy <- if (tasks.left.out > 0)
         predictionAccuracy(result, dat$X.out, tasks.left.out, dat$subset)
     else
@@ -108,7 +108,7 @@ FitMaxDiff <- function(design, version, best, worst, alternative.names, n.classe
     result$n.respondents <- n.respondents # this should be the unfiltered number of respondents
     result$subset <- subset
     result$weights <- weights
-    result$n.tasks <- dat$n.tasks
+    result$n.questions <- dat$n.questions
     result$n.alternatives.per.task <- ncol(dat$X.in)
     result$covariates.notes <- covariates.notes
     result$output <- output
@@ -127,21 +127,20 @@ latentClassMaxDiff <- function(dat, alternative.names, ind.levels, resp.pars = N
     n.respondents <- length(dat$respondent.indices)
     n.levels <- length(ind.levels)
     n.beta <- dat$n.alternatives - 1
-    n.tasks <- dat$n.tasks.in
+    n.questions <- dat$n.questions.in
     n.choices <- ncol(dat$X.in)
     X <- dat$X.in
     weights <- dat$weights
     tol <- 0.0001
-
     boost <- if (is.null(resp.pars))
-        matrix(0, nrow = n.respondents * n.tasks, ncol = n.choices)
+        matrix(0, nrow = n.respondents * n.questions, ncol = n.choices)
     else
     {
         resp.pars <- as.matrix(resp.pars)
-        tmp <- matrix(0, nrow = n.respondents * n.tasks, ncol = n.choices)
+        tmp <- matrix(0, nrow = n.respondents * n.questions, ncol = n.choices)
         for (i in 1:n.respondents)
         {
-            ind <- ((i - 1) * n.tasks + 1):(i * n.tasks)
+            ind <- ((i - 1) * n.questions + 1):(i * n.questions)
             tmp[ind, ] <- matrix(resp.pars[i, X[ind, ]], ncol = n.choices)
         }
         tmp
@@ -161,7 +160,7 @@ latentClassMaxDiff <- function(dat, alternative.names, ind.levels, resp.pars = N
     {
         pp <- posteriorProbabilities(p, X, boost, ind.levels, n.classes, n.beta)
         p <- inferParameters(pp, X, boost, weights, ind.levels, n.beta, trace)
-        ll <- logLikelihood(p, X, boost, weights, ind.levels, n.classes, n.beta, n.tasks, apply.weights = apply.weights)
+        ll <- logLikelihood(p, X, boost, weights, ind.levels, n.classes, n.beta, n.questions, apply.weights = apply.weights)
         # print(ll)
         if (ll - previous.ll < tol)
             break
@@ -169,13 +168,13 @@ latentClassMaxDiff <- function(dat, alternative.names, ind.levels, resp.pars = N
             previous.ll <- ll
     }
 
-    respondent.pp <- matrix(NA, n.respondents * n.tasks, n.classes)
+    respondent.pp <- matrix(NA, n.respondents * n.questions, n.classes)
     for (l in 1:n.levels)
     {
         n.ind <- length(ind.levels[[l]])
         respondent.pp[ind.levels[[l]], ] <- t(matrix(rep(pp[l, ], n.ind), ncol = n.ind))
     }
-    respondent.pp <- respondent.pp[(1:n.respondents) * n.tasks, , drop = FALSE]
+    respondent.pp <- respondent.pp[(1:n.respondents) * n.questions, , drop = FALSE]
     if (!is.null(dat$subset))
     {
         posterior.probabilities <- matrix(NA, length(dat$subset), n.classes)
@@ -222,7 +221,7 @@ latentClassMaxDiff <- function(dat, alternative.names, ind.levels, resp.pars = N
         result$class.sizes <- 1
     }
     result$coef <- coef
-    result$effective.sample.size <- ess <- sum(weights) / n.tasks
+    result$effective.sample.size <- ess <- sum(weights) / n.questions
     result$n.parameters <- n.parameters + n.previous.parameters
     result$bic <- -2*ll + log(ess) * result$n.parameters
     result$probabilities <- probabilities
@@ -268,16 +267,16 @@ gradientMaxDiff <- function(b, X, boost, weights)
     gradientBestWorst(e.u, X - 1, weights, length(b))
 }
 
-predictionAccuracy <- function(object, X, n.tasks, subset)
+predictionAccuracy <- function(object, X, n.questions, subset)
 {
     score <- rep(NA, nrow(X))
     resp.pars <- as.matrix(RespondentParameters(object)[subset, ])
     for (i in 1:nrow(resp.pars))
     {
         pars <- resp.pars[i, ]
-        for (j in 1:n.tasks)
+        for (j in 1:n.questions)
         {
-            ind <- (i - 1) * n.tasks + j
+            ind <- (i - 1) * n.questions + j
             u <- pars[X[ind, ]]
             score[ind] <- all(u[1] > u[-1])
         }
@@ -344,10 +343,10 @@ print.FitMaxDiff <- function(x, ...)
     if (!is.null(x$weights))
         footer <- paste0(footer, "Weights have been applied; Effective sample size: ",
                          FormatWithDecimals(x$effective.sample.size, 2), "; ")
-    footer <- paste0(footer, "Number of questions: ", x$n.tasks, "; ")
+    footer <- paste0(footer, "Number of questions: ", x$n.questions, "; ")
     if (x$tasks.left.out > 0)
     {
-        footer <- paste0(footer, "Questions used in estimation: ", x$n.tasks - x$tasks.left.out, "; ")
+        footer <- paste0(footer, "Questions used in estimation: ", x$n.questions - x$tasks.left.out, "; ")
         footer <- paste0(footer, "Questions left out: ", x$tasks.left.out, "; ")
     }
     footer <- paste0(footer, "Alternatives per question: ", x$n.alternatives.per.task, "; ")

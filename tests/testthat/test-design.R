@@ -20,7 +20,6 @@ test_that("design",
                             number.questions = 6,
                             alternatives.per.question = 4,
                             n.repeats = 1))
-
     expect_error(MaxDiffDesign(number.alternatives = 4,
                             number.questions = 4,
                             alternatives.per.question = 10,
@@ -74,3 +73,5 @@ test_that("Individual-level design",
                             n.versions = 100,
                             n.repeats = 1))), NA)
 })
+
+

@@ -10,18 +10,16 @@ FitMaxDiff(design, version, best, worst, alternative.names, n.classes = 1,
   lc = TRUE, output = "Probabilities", tasks.left.out = 0)
 }
 \arguments{
-\item{design}{A \code{data.frame}, where the first variable is called 'Version', the second is called 'Task',
+\item{design}{A \code{data.frame}, where the first variable is called 'Version', the second is called 'Task' or 'Question',
 and the remaining variables contain the alternatives shown in each task.}
 
 \item{version}{A vector of integers showing the version of the design shown to each respondent.}
 
-\item{best}{A matrix of integers showing the choices made by each respondent on each of the tasks. One column
-for each task. The integers need to corresponde to the \code{design} vector of integers showing the version of
+\item{best}{A data frame of factors or a matrix of integers showing the choices made by each respondent on each of the tasks. One column
+for each task. The integers need to correspond to the \code{design} vector of integers showing the version of
 the design shown to each respondent. Coerced to a matrix if a \code{data.frame}.}
 
-\item{worst}{A matrix of integers showing the choice of 'worst'.}
-
-\item{alternative.names}{A character vector names of the alternatives. If only a single element is supplied, it is split by commas.}
+\item{worst}{As with 'best', except denoting worst..}
 
 \item{n.classes}{The number of latent classes.}
 
@@ -46,6 +44,8 @@ no outputs, and 6 is the most detailed outputs.}
 \item{output}{Output type. Can be "Probabilities" or "Classes".}
 
 \item{tasks.left.out}{Number of tasks to leave out for cross-validation.}
+
+\item{worst}{A matrix of integers showing the choice of 'worst'.}
 }
 \description{
 Fits a latent class rank-ordered logit model with ties to a max-diff experiment.
