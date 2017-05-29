@@ -2,7 +2,7 @@
 #' @description Creates an experimental design for a max-diff experiment.
 #' @param number.alternatives The number of alternatives in the experiment. For example, if you are doing a study investigating preferences for 10 brands, then 10 is the number of alternatives.
 #' @param number.questions The number of max-diff questions to show to respondents. Sawtooth Software suggests that a rough guideline is: \code{Number of questions >= 3 * Number of alternatives / Alternatives per question}.
-#' @param alternatives.per.question For example, if you have a study of 10 brands, and in each question you show five brands, asking the respondent to choose the one of the five that they like the most and the one that they like the least, then \code{Alternatives per question = 5}.
+#' @param alternatives.per.question For example, if you have a study of 10 brands, and in each question you show five brands, asking the respondent to choose the one of the five that they like the most and the one that they like the least, then \code{Alternatives per question = 5}. That is, the number of options shown in each question.
 #' @param n.repeats The number of times that the algorithm seeks to find a solution. The higher the number, the greater the chance that the best possible solution is found. For most problems, this makes little difference (i.e., a marginally sub-optimal experimental design will tend not to have any meaningful consequence on the conclusions drawn from the analyses).
 #' @param n.versions The number of versions of the experimental design (defaults to 1). Subsequent versions are obtained by permutting the columns of the binary design.
 #' @param seed Random number seed for generation of the experimental design.
@@ -29,7 +29,7 @@ MaxDiffDesign <- function(number.alternatives, number.questions, alternatives.pe
             best.D = alg.results$D
         }
     }
-    design <- matrix(best.result$rows, nrow = number.questions, byrow = TRUE, dimnames = list(Question = 1:number.questions, Alternative = 1:alternatives.per.question))
+    design <- matrix(best.result$rows, nrow = number.questions, byrow = TRUE, dimnames = list(Questions = paste("Question", 1:number.questions), Alternatives = paste("Option", 1:alternatives.per.question)))
     result <- CheckMaxDiffDesign(design)
     if (n.versions > 1)
         result <- c(result, multipleVersionDesign(result, n.versions))
@@ -50,10 +50,10 @@ multipleVersionDesign <- function(original, n.versions)
     alternatives.per.question <- ncol(original$design)
     number.questions <- nrow(original$design)
     nrows <- number.questions * n.versions
-    cnames <- paste0("Alt. ", colnames(original$design))
+    cnames <- colnames(original$design)
     randomized.designs <- matrix(NA,
          nrow = nrows, ncol = 2 + alternatives.per.question,
-         dimnames = list(1:nrows, Alternative = c("Version", "Question", cnames)))
+         dimnames = list(1:nrows, c("Version", "Question", cnames)))
     randomized.designs[, 1] <- rep(1:n.versions, each = number.questions)
     randomized.designs[, 2] <- rep(1:number.questions)
     randomized.designs[1:number.questions, -1:-2] <- original$design
