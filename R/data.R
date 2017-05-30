@@ -90,6 +90,17 @@ cleanAndCheckData <- function(design, version = NULL, best, worst, alternative.n
         best <- trimws(sapply(best, as.character))
         worst <- trimws(sapply(worst, as.character))
     }
+    names.in.data <- unique(c(unlist(best), unlist(worst)))
+    missing.names <- !alternative.names %in% names.in.data
+    if (any(missing.names))
+        warning(paste("The following alternative names do not appear in the data:", paste(alternative.names[missing.names], collapse = ",")))
+    missing.names <- !names.in.data %in% alternative.names
+    if (any(missing.names))
+        warning(paste("The following alternative names appear in the data, but were not supplied as alternative names:", paste(names.in.data[missing.names], collapse = ",")))
+    if (any(is.na(worst)))
+        stop("Unable to match alternative names with 'worst' data.")
+    if (any(is.na(best)))
+        stop("Unable to match alternative names with 'best' data.")
     if (is.character(best[[1]]))
     {
         best <- apply(best, 2, function(x) match(x, alternative.names))

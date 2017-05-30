@@ -101,7 +101,7 @@ test_that("Checking some of the inputs", {
     # No names
     expect_error(FitMaxDiff(design = tech.design, best = best, worst = worst))
     # Incorrect names as a string
-    expect_error(FitMaxDiff(design = tech.design, best = best, worst = worst, alternative.names = "A,B,C,D,E,F,G,h,I,J"))
+    expect_error(suppressWarnings(FitMaxDiff(design = tech.design, best = best, worst = worst, alternative.names = "A,B,C,D,E,F,G,h,I,J")))
     # Correct names as a string
     nms = paste(names, collapse = ", ")
     expect_error(FitMaxDiff(design = tech.design, best = best, worst = worst, alternative.names = nms), NA)
@@ -150,3 +150,26 @@ test_that("Saving variables", {
     expect_equal(length(m), 3)
     expect_equal(sum(m), sum(sub))
 })
+
+test_that("Experimental designs with versions", {
+    # President.
+    dat <- suppressWarnings(foreign::read.spss("http://wiki.q-researchsoftware.com/images/6/61/President.sav", to.data.frame = TRUE))
+    des <- read.csv("http://wiki.q-researchsoftware.com/images/9/9d/PresidentialDesign.csv")
+    best <- dat[, c("MDmost_1", "MDmost_2", "MDmost_3", "MDmost_4"   ,"MDmost_5"  , "MDmost_6", "MDmost_7"  ,"MDmost_8","MDmost_9","MDmost_10" )]
+    worst <- dat[, c("MDleast_1", "MDleast_2", "MDleast_3" , "MDleast_4",  "MDleast_5"  ,"MDleast_6",  "MDleast_7", "MDleast_8",  "MDleast_9", "MDleast_10")]
+    names <- c("Decent/ethical", "Plain-speaking", "Healthy", "Successful in business", "Good in a crisis", "Experienced in government", "Concerned for minorities", "Understands economics", "Concerned about global warming", "Concerned about poverty", "Has served in the military", "Multilingual", "Entertaining", "Male", "From a traditional American background", "Christian")
+    expect_error(suppressWarnings(FitMaxDiff(design = des, dat$MDversion, best = best, worst = worst, alternative.names = names)))
+    names <- c("Decent/ethical", "Plain-speaking", "Healthy", "Successful in business", "Good in a crisis", "Experienced in government", "Concerned for the welfare of minorities", "Understands economics", "Concerned about global warming", "Concerned about poverty", "Has served in the military", "Multilingual", "Entertaining", "Male", "From a traditional American background", "Christian")
+    expect_error(FitMaxDiff(design = des, dat$MDversion, best = best, worst = worst, alternative.names = names), NA)
+    expect_error(FitMaxDiff(design = des, dat$MDversion, best = best, worst = worst, alternative.names = names, n.classes = 3), NA)
+    # Example from Q wiki
+    # dat <- suppressWarnings(foreign::read.spss("http://wiki.q-researchsoftware.com/images/6/66/MaxDiffSetupExample.sav", to.data.frame = TRUE))
+    # des <- read.csv("http://wiki.q-researchsoftware.com/images/2/24/ExampleMaxDiffDesign.csv")
+    # best <- dat[, paste0("Q11task", 1:13,"most")]
+    # worst <- dat[, paste0("Q11task", 1:13,"least")]
+    # names <- paste("Brand", 1:13)
+    # expect_error(FitMaxDiff(design = des, dat$MDversion, best = best, worst = worst, alternative.names = names))
+
+})
+
+
