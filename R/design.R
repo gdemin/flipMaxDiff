@@ -22,7 +22,7 @@ MaxDiffDesign <- function(number.alternatives, number.questions, alternatives.pe
                                     blocksizes=rep(alternatives.per.question,number.questions),
                                     nRepeats=5000), silent = TRUE) #BIB, silent = TRUE))
         if (any("try-error" %in% class(alg.results)))
-            stop("Unable to compute experimental design. It is likely that your inputs are not sensible.")
+            stop("Unable to compute experimental design. It is likely that the inputs are not sensible.")
         if (alg.results$D > best.D)
         {
             best.result = alg.results
@@ -99,9 +99,9 @@ CheckMaxDiffDesign <- function(design)
         binary.design[q, design[q, ]] <- 1
     n.appearances.per.alternative <- table(as.numeric(design))
     if ((min.a <- min(n.appearances.per.alternative)) < 3)
-        warning(paste0("One or more of your alternatives appears only ", min.a, " time(s). A common recommendation is that each alternative should appear 3 times. You can review the frequencies by viewing the detailed outputs."))
+        warning(paste0("One or more of the alternatives appears only ", min.a, " time(s). A common recommendation is that each alternative should appear 3 times. You can review the frequencies by viewing the detailed outputs."))
     if (min.a != max(n.appearances.per.alternative))
-        warning(paste0("Your design is not balanced. That is, some alternatives appear more frequently than others. You can review the frequencies by viewing the detailed outputs."))
+        warning(paste0("The design is not balanced. That is, some alternatives appear more frequently than others. You can review the frequencies by viewing the detailed outputs."))
     correlations <- round(cor(binary.design), 2)
     cors <- abs(correlations[lower.tri(correlations)])
     cor.max  <- max(cors, na.rm = TRUE)
