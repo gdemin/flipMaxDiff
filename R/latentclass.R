@@ -1,3 +1,111 @@
+latentClassMaxDiff <- function(dat, alternative.names, ind.levels, resp.pars = NULL, n.classes = 1, seed = 123,
+                               initial.parameters = NULL, n.previous.parameters = 0, trace = 0, apply.weights = TRUE)
+{
+    n.respondents <- length(dat$respondent.indices)
+    n.levels <- length(ind.levels)
+    n.beta <- dat$n.alternatives - 1
+    n.questions <- dat$n.questions.in
+    n.choices <- ncol(dat$X.in)
+    X <- dat$X.in
+    weights <- dat$weights
+    tol <- 0.0001
+    boost <- if (is.null(resp.pars))
+        matrix(0, nrow = n.respondents * n.questions, ncol = n.choices)
+    else
+    {
+        resp.pars <- as.matrix(resp.pars)
+        tmp <- matrix(0, nrow = n.respondents * n.questions, ncol = n.choices)
+        for (i in 1:n.respondents)
+        {
+            ind <- ((i - 1) * n.questions + 1):(i * n.questions)
+            tmp[ind, ] <- matrix(resp.pars[i, X[ind, ]], ncol = n.choices)
+        }
+        tmp
+    }
+
+    p <- if (!is.null(initial.parameters))
+        initial.parameters
+    else
+    {
+        class.memberships <- randomClassMemberships(n.levels, n.classes, seed)
+        inferParameters(class.memberships, X, boost, weights, ind.levels, n.beta, trace)
+    }
+
+    previous.ll <- -Inf
+
+    repeat
+    {
+        pp <- posteriorProbabilities(p, X, boost, ind.levels, n.classes, n.beta)
+        p <- inferParameters(pp, X, boost, weights, ind.levels, n.beta, trace)
+        ll <- logLikelihood(p, X, boost, weights, ind.levels, n.classes, n.beta, n.questions, apply.weights = apply.weights)
+        # print(ll)
+        if (ll - previous.ll < tol)
+            break
+        else
+            previous.ll <- ll
+    }
+
+    respondent.pp <- matrix(NA, n.respondents * n.questions, n.classes)
+    for (l in 1:n.levels)
+    {
+        n.ind <- length(ind.levels[[l]])
+        respondent.pp[ind.levels[[l]], ] <- t(matrix(rep(pp[l, ], n.ind), ncol = n.ind))
+    }
+    respondent.pp <- respondent.pp[(1:n.respondents) * n.questions, , drop = FALSE]
+    if (!is.null(dat$subset))
+    {
+        posterior.probabilities <- matrix(NA, length(dat$subset), n.classes)
+        posterior.probabilities[dat$subset, ] <- respondent.pp
+    }
+    else
+        posterior.probabilities <- respondent.pp
+
+    if (!is.null(dat$subset) && !is.null(resp.pars))
+    {
+        input.respondent.pars <- matrix(NA, length(dat$subset), ncol(resp.pars))
+        input.respondent.pars[dat$subset, ] <- resp.pars
+    }
+    else
+        input.respondent.pars <- resp.pars
+
+    result <- list(posterior.probabilities = posterior.probabilities,
+                   log.likelihood = ll,
+                   n.classes = n.classes,
+                   input.respondent.pars = input.respondent.pars)
+    if (n.classes > 1)
+    {
+        coef <- matrix(0, nrow = n.beta + 1, ncol = n.classes)
+        for (c in 1:n.classes)
+            coef[2:(n.beta + 1), c] <- p[((c - 1) * n.beta + 1):(c * n.beta)]
+        rownames(coef) <- dat$alternative.names
+        colnames(coef) <- paste("Class", 1:n.classes)
+        n.parameters <- prod(dim(coef[-1,])) + n.classes - 1
+        result$class.sizes <- getClassWeights(p, n.classes, n.beta)
+        probabilities <- exp(coef) / t(matrix(rep(colSums(exp(coef)), nrow(coef)), nrow = n.classes))
+        table.data <- matrix(NA, nrow(probabilities), ncol(probabilities) + 1)
+        colnames(table.data) <- c(paste("Class", 1:n.classes), "Total")
+        rownames(table.data) <- rownames(probabilities)
+        table.data[, 1:ncol(probabilities)] <- probabilities
+        table.data[, ncol(probabilities) + 1] <- rowSums(probabilities * t(matrix(rep(result$class.sizes, nrow(probabilities)), ncol = nrow(probabilities))))
+        probabilities <- table.data
+    }
+    else
+    {
+        coef <- c(0, p)
+        n.parameters <- length(p)
+        names(coef) <- dat$alternative.names
+        probabilities <- exp(coef) / sum(exp(coef))
+        result$class.sizes <- 1
+    }
+    result$coef <- coef
+    result$effective.sample.size <- ess <- sum(weights) / n.questions
+    result$n.parameters <- n.parameters + n.previous.parameters
+    result$bic <- -2*ll + log(ess) * result$n.parameters
+    result$probabilities <- probabilities
+    class(result) <- "FitMaxDiff"
+    result
+}
+
 # Randomly assign n individuals to classes
 randomClassMemberships <- function(n, n.classes, seed = 123)
 {
@@ -60,7 +168,7 @@ posteriorProbabilities <- function(pars, X, boost, ind.levels, n.classes, n.beta
         - t(matrix(rep(repsondents.log.densities, each = n.classes), n.classes)))
 }
 
-logLikelihood <- function(pars, X, boost, weights, ind.levels, n.classes, n.beta, n.tasks, apply.weights)
+logLikelihood <- function(pars, X, boost, weights, ind.levels, n.classes, n.beta, n.questions, apply.weights)
 {
     log.class.weights <- log(getClassWeights(pars, n.classes, n.beta))
     class.pars <- getClassParameters(pars, n.classes, n.beta)
@@ -71,7 +179,7 @@ logLikelihood <- function(pars, X, boost, weights, ind.levels, n.classes, n.beta
     {
         if (apply.weights)
         {
-            res <- res + logOfSum(log.class.weights + log.densities[l, ]) * weights[(l - 1) * n.tasks + 1]
+            res <- res + logOfSum(log.class.weights + log.densities[l, ]) * weights[(l - 1) * n.questions + 1]
         }
         else
         {
@@ -126,13 +234,13 @@ getClassParameters <- function(pars, n.classes, n.beta)
     pars.list
 }
 
-getLevelIndices <- function(characteristic, n.tasks)
+getLevelIndices <- function(characteristic, n.questions)
 {
     n.respondents <- length(characteristic)
     lvls <- unique(characteristic)
     n.levels <- length(lvls)
     result <- vector("list", n.levels)
     for (l in 1:n.levels)
-        result[[l]] <- (1:(n.respondents * n.tasks))[rep(characteristic == lvls[l], each = n.tasks)]
+        result[[l]] <- (1:(n.respondents * n.questions))[rep(characteristic == lvls[l], each = n.questions)]
     result
 }
