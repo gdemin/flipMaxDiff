@@ -50,12 +50,14 @@ FitMaxDiff <- function(design, version = NULL, best, worst, alternative.names, n
                                              trace, apply.weights, lc, sub.model.outputs)
     }
 
+    n.respondents <- length(dat$respondent.indices)
     in.sample.accuracies <- predictionAccuracies(result, dat$X.in, dat$n.questions.in, dat$subset)
-    result$in.sample.accuracy <- sum(in.sample.accuracies * dat$weights) / sum(dat$weights)
+    w <- dat$weights[(1:n.respondents) * dat$n.questions.in]
+    result$in.sample.accuracy <- sum(in.sample.accuracies * w) / sum(w)
     if (questions.left.out > 0)
     {
         result$prediction.accuracies <- predictionAccuracies(result, dat$X.out, questions.left.out, dat$subset)
-        result$out.sample.accuracy <- sum(result$prediction.accuracies * dat$weights) / sum(dat$weights)
+        result$out.sample.accuracy <- sum(result$prediction.accuracies * w) / sum(w)
     }
     else
     {
