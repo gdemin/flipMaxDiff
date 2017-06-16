@@ -1,8 +1,9 @@
-varyingCoefficientsMaxDiff <- function(dat, alternative.names, n.classes, seed, initial.parameters,
-                                       trace, apply.weights, lc, sub.model.outputs)
+varyingCoefficientsMaxDiff <- function(dat, n.classes, seed, initial.parameters,
+                                       trace, apply.weights, lc, sub.model.outputs, lc.tolerance)
 {
     n.respondents <- length(dat$respondent.indices)
     n.questions.in <- dat$n.questions.in
+    alternative.names <- dat$alternative.names
     resp.pars <- NULL
     n.previous.parameters <- 0
     characteristics <- dat$characteristics
@@ -22,8 +23,9 @@ varyingCoefficientsMaxDiff <- function(dat, alternative.names, n.classes, seed, 
             # Loop over all possible class sizes
             for (n.c in 1:n.levels)
             {
-                solution <- latentClassMaxDiff(dat, alternative.names, ind.levels, resp.pars, n.c, seed,
-                                               initial.parameters, n.previous.parameters, trace, apply.weights = apply.weights)
+                solution <- latentClassMaxDiff(dat, ind.levels, resp.pars, n.c, seed,
+                                               initial.parameters, n.previous.parameters, trace,
+                                               apply.weights = apply.weights, lc.tolerance)
                 if (solution$bic < best.bic)
                 {
                     best.bic <- solution$bic
@@ -52,8 +54,8 @@ varyingCoefficientsMaxDiff <- function(dat, alternative.names, n.classes, seed, 
     }
 
     result <- if (lc || is.null(characteristics))
-        latentClassMaxDiff(dat, alternative.names, dat$respondent.indices, resp.pars, n.classes, seed,
-                           initial.parameters, n.previous.parameters, trace, apply.weights = apply.weights)
+        latentClassMaxDiff(dat, dat$respondent.indices, resp.pars, n.classes, seed, initial.parameters,
+                           n.previous.parameters, trace, apply.weights, lc.tolerance)
     else if (covariates.chosen)
         best.solution
     else

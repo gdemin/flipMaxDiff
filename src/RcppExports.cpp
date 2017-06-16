@@ -5,6 +5,17 @@
 
 using namespace Rcpp;
 
+// densitiesP
+NumericVector densitiesP(NumericMatrix e_u);
+RcppExport SEXP flipMaxDiff_densitiesP(SEXP e_uSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type e_u(e_uSEXP);
+    rcpp_result_gen = Rcpp::wrap(densitiesP(e_u));
+    return rcpp_result_gen;
+END_RCPP
+}
 // logDensitiesBestWorst
 NumericVector logDensitiesBestWorst(NumericMatrix e_u, NumericVector weights);
 RcppExport SEXP flipMaxDiff_logDensitiesBestWorst(SEXP e_uSEXP, SEXP weightsSEXP) {
@@ -40,6 +51,31 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< NumericVector >::type weights(weightsSEXP);
     Rcpp::traits::input_parameter< int >::type n_pars(n_parsSEXP);
     rcpp_result_gen = Rcpp::wrap(gradientBestWorst(e_u, x, weights, n_pars));
+    return rcpp_result_gen;
+END_RCPP
+}
+// logKernels
+NumericVector logKernels(NumericMatrix beta_draws, IntegerMatrix x, NumericVector weights);
+RcppExport SEXP flipMaxDiff_logKernels(SEXP beta_drawsSEXP, SEXP xSEXP, SEXP weightsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type beta_draws(beta_drawsSEXP);
+    Rcpp::traits::input_parameter< IntegerMatrix >::type x(xSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type weights(weightsSEXP);
+    rcpp_result_gen = Rcpp::wrap(logKernels(beta_draws, x, weights));
+    return rcpp_result_gen;
+END_RCPP
+}
+// sumWeightedOuterProducts
+NumericMatrix sumWeightedOuterProducts(NumericMatrix beta_draws, NumericVector weights);
+RcppExport SEXP flipMaxDiff_sumWeightedOuterProducts(SEXP beta_drawsSEXP, SEXP weightsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< NumericMatrix >::type beta_draws(beta_drawsSEXP);
+    Rcpp::traits::input_parameter< NumericVector >::type weights(weightsSEXP);
+    rcpp_result_gen = Rcpp::wrap(sumWeightedOuterProducts(beta_draws, weights));
     return rcpp_result_gen;
 END_RCPP
 }

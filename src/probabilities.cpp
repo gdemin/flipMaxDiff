@@ -12,6 +12,7 @@ LogicalVector nextCombination(LogicalVector comb)
     return comb;
 }
 
+// [[Rcpp::export]]
 NumericVector densitiesP(NumericMatrix e_u)
 {
     int n = e_u.nrow();
@@ -36,6 +37,10 @@ NumericVector densitiesP(NumericMatrix e_u)
         }
         phi = nextCombination(phi);
     } while (is_true(any(phi)));
+
+    for (int i = 0; i < n; i++)
+        if (result[i] < 0)
+            result[i] = 0;
 
     return result;
 }
@@ -166,4 +171,46 @@ NumericVector gradientBestWorst(NumericMatrix e_u, IntegerMatrix x, NumericVecto
     return result;
 }
 
+// [[Rcpp::export]]
+NumericVector logKernels(NumericMatrix beta_draws, IntegerMatrix x, NumericVector weights)
+{
+    int n_draws = beta_draws.nrow();
+    int n = x.nrow();
+    int n_choices = x.ncol();
+    NumericVector logs_of_k(n_draws);
+    for (int d = 0; d < n_draws; d++)
+    {
+        NumericMatrix e_u(n, n_choices);
+        for (int i = 0; i < n; i++)
+            for (int j = 0; j < n_choices; j++)
+            {
+                int idx = x(i, j);
+                if (idx > 1)
+                    e_u(i, j) = exp(beta_draws(d, idx - 2));
+                else
+                    e_u(i, j) = 1;
+            }
+        logs_of_k[d] = logDensityBestWorst(e_u, weights);
+    }
+    return logs_of_k;
+}
 
+// Computes the sum of the outer products of beta draws, i.e.:
+// beta_1 * beta_1^T + beta_2 * beta_2^T + ... + beta_R * beta_R^T
+// [[Rcpp::export]]
+NumericMatrix sumWeightedOuterProducts(NumericMatrix beta_draws, NumericVector weights)
+{
+    int n_draws = beta_draws.nrow();
+    int n_beta = beta_draws.ncol();
+    NumericMatrix result(n_beta, n_beta);
+    for (int i = 0; i < n_beta; i++) {
+        for (int j = i; j < n_beta; j++) {
+            double val = 0;
+            for (int d = 0; d < n_draws; d++)
+                val += beta_draws(d, i) * beta_draws(d, j) * weights[d];
+            result(i, j) = val;
+            result(j, i) = val;
+        }
+    }
+    return result;
+}

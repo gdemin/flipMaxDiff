@@ -16,7 +16,7 @@ test_that("Estimating logit parameters", {
     q.probs <- c(0.1358834315826, 0.1241144627641, 0.0488817685569, 0.1969619087625,
                  0.07025650843667, 0.1399245639353, 0.125033634106, 0.05690964591415,
                  0.04496150786246, 0.05707256807926)
-    expect_equal(as.vector(result$probabilities), q.probs, tolerance = 0.0001)
+    expect_equal(as.vector(result$class.preference.shares), q.probs, tolerance = 0.0001)
     expect_error(print(result), NA)
     # Subset
     sub <- unclass(tech.data$Q2) <= 3
@@ -51,7 +51,7 @@ test_that("Latent class", {
     q.probs <- structure(c(0.6118, 0.061, 0.0196, 0.1097, 0.0294, 0.0535, 0.0542,
                            0.0229, 0.0183, 0.0195, 0.0297, 0.1186, 0.0455, 0.1884, 0.0753,
                            0.2138, 0.1516, 0.0598, 0.0412, 0.076), .Dim = c(10L, 2L))
-    expect_equal(unname(result$probabilities[, 1:2]), q.probs, tolerance = 0.001)
+    expect_equal(unname(result$class.preference.shares[, 1:2]), q.probs, tolerance = 0.001)
     expect_error(print(result), NA)
 
     # Subset and weight

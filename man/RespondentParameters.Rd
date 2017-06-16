@@ -10,5 +10,5 @@ RespondentParameters(object)
 \item{object}{A \code{FitMaxDiff} object.}
 }
 \description{
-Computes parameters for each respondent.
+The parameters for each respondent.
 }

@@ -1,5 +1,6 @@
-latentClassMaxDiff <- function(dat, alternative.names, ind.levels, resp.pars = NULL, n.classes = 1, seed = 123,
-                               initial.parameters = NULL, n.previous.parameters = 0, trace = 0, apply.weights = TRUE)
+latentClassMaxDiff <- function(dat, ind.levels, resp.pars = NULL, n.classes = 1, seed = 123,
+                               initial.parameters = NULL, n.previous.parameters = 0, trace = 0,
+                               apply.weights = TRUE, tol = 0.0001)
 {
     n.respondents <- length(dat$respondent.indices)
     n.levels <- length(ind.levels)
@@ -8,20 +9,9 @@ latentClassMaxDiff <- function(dat, alternative.names, ind.levels, resp.pars = N
     n.choices <- ncol(dat$X.in)
     X <- dat$X.in
     weights <- dat$weights
-    tol <- 0.0001
-    boost <- if (is.null(resp.pars))
-        matrix(0, nrow = n.respondents * n.questions, ncol = n.choices)
-    else
-    {
-        resp.pars <- as.matrix(resp.pars)
-        tmp <- matrix(0, nrow = n.respondents * n.questions, ncol = n.choices)
-        for (i in 1:n.respondents)
-        {
-            ind <- ((i - 1) * n.questions + 1):(i * n.questions)
-            tmp[ind, ] <- matrix(resp.pars[i, X[ind, ]], ncol = n.choices)
-        }
-        tmp
-    }
+    alternative.names <- dat$alternative.names
+
+    boost <- computeBoost(resp.pars, X, n.respondents, n.questions, n.choices)
 
     p <- if (!is.null(initial.parameters))
         initial.parameters
@@ -70,8 +60,7 @@ latentClassMaxDiff <- function(dat, alternative.names, ind.levels, resp.pars = N
 
     result <- list(posterior.probabilities = posterior.probabilities,
                    log.likelihood = ll,
-                   n.classes = n.classes,
-                   input.respondent.pars = input.respondent.pars)
+                   n.classes = n.classes)
     if (n.classes > 1)
     {
         coef <- matrix(0, nrow = n.beta + 1, ncol = n.classes)
@@ -79,29 +68,21 @@ latentClassMaxDiff <- function(dat, alternative.names, ind.levels, resp.pars = N
             coef[2:(n.beta + 1), c] <- p[((c - 1) * n.beta + 1):(c * n.beta)]
         rownames(coef) <- dat$alternative.names
         colnames(coef) <- paste("Class", 1:n.classes)
-        n.parameters <- prod(dim(coef[-1,])) + n.classes - 1
         result$class.sizes <- getClassWeights(p, n.classes, n.beta)
-        probabilities <- exp(coef) / t(matrix(rep(colSums(exp(coef)), nrow(coef)), nrow = n.classes))
-        table.data <- matrix(NA, nrow(probabilities), ncol(probabilities) + 1)
-        colnames(table.data) <- c(paste("Class", 1:n.classes), "Total")
-        rownames(table.data) <- rownames(probabilities)
-        table.data[, 1:ncol(probabilities)] <- probabilities
-        table.data[, ncol(probabilities) + 1] <- rowSums(probabilities * t(matrix(rep(result$class.sizes, nrow(probabilities)), ncol = nrow(probabilities))))
-        probabilities <- table.data
+        result$class.preference.shares <- classPreferenceShares(coef, result$class.sizes)
     }
     else
     {
         coef <- c(0, p)
-        n.parameters <- length(p)
         names(coef) <- dat$alternative.names
-        probabilities <- exp(coef) / sum(exp(coef))
         result$class.sizes <- 1
+        result$class.preference.shares <- exp(coef) / sum(exp(coef))
     }
     result$coef <- coef
     result$effective.sample.size <- ess <- sum(weights) / n.questions
-    result$n.parameters <- n.parameters + n.previous.parameters
-    result$bic <- -2*ll + log(ess) * result$n.parameters
-    result$probabilities <- probabilities
+    result$n.parameters <- numberOfParameters(n.beta, n.classes, "Finite", FALSE) + n.previous.parameters
+    result$bic <- -2 * ll + log(ess) * result$n.parameters
+    result$respondent.parameters <- computeRespondentParameters(result, alternative.names, input.respondent.pars)
     class(result) <- "FitMaxDiff"
     result
 }
@@ -111,6 +92,11 @@ randomClassMemberships <- function(n, n.classes, seed = 123)
 {
     set.seed(seed)
     memberships <- vector("integer", n)
+    if (n < n.classes)
+        stop("The number of individuals may not be less than the number of classes.")
+
+    # Could be optimized to avoid the repeat loop which is slow when n = n.classes and both are large.
+    # Do this by assigning one individual to a class at the start.
     repeat
     {
         memberships <- sample(1:n.classes, n, replace = T)
@@ -242,5 +228,54 @@ getLevelIndices <- function(characteristic, n.questions)
     result <- vector("list", n.levels)
     for (l in 1:n.levels)
         result[[l]] <- (1:(n.respondents * n.questions))[rep(characteristic == lvls[l], each = n.questions)]
+    result
+}
+
+classPreferenceShares <- function(coef, class.sizes)
+{
+    n.classes <- ncol(coef)
+    pref.shares <- exp(coef) / t(matrix(rep(colSums(exp(coef)), nrow(coef)), nrow = n.classes))
+    result <- matrix(NA, nrow(pref.shares), ncol(pref.shares) + 1)
+    colnames(result) <- c(paste("Class", 1:n.classes), "Total")
+    rownames(result) <- rownames(pref.shares)
+    result[, 1:ncol(pref.shares)] <- pref.shares
+    result[, ncol(pref.shares) + 1] <- rowSums(pref.shares *
+        t(matrix(rep(class.sizes, nrow(pref.shares)), ncol = nrow(pref.shares))))
+    result
+}
+
+computeRespondentParameters <- function(object, alternative.names, input.respondent.pars = NULL)
+{
+    pp <- object$posterior.probabilities
+    coef <- object$coef
+    n.classes <- object$n.classes
+    if (n.classes > 1)
+        result <- pp[ , 1, drop = FALSE] %*% t(coef[, 1, drop = FALSE])
+    else
+        result <- pp[ , 1, drop = FALSE] %*% t(coef)
+    if (n.classes > 1)
+        for (c in 2:n.classes)
+            result <- result + pp[ , c, drop = FALSE] %*% t(coef[, c, drop = FALSE])
+    if (!is.null(input.respondent.pars))
+        result <- result + input.respondent.pars
+
+    colnames(result) <- alternative.names
+    result
+}
+
+computeBoost <- function(resp.pars, X, n.respondents, n.questions, n.choices)
+{
+    if (is.null(resp.pars))
+        result <- matrix(0, nrow = n.respondents * n.questions, ncol = n.choices)
+    else
+    {
+        resp.pars <- as.matrix(resp.pars)
+        result <- matrix(0, nrow = n.respondents * n.questions, ncol = n.choices)
+        for (i in 1:n.respondents)
+        {
+            ind <- ((i - 1) * n.questions + 1):(i * n.questions)
+            result[ind, ] <- matrix(resp.pars[i, X[ind, ]], ncol = n.choices)
+        }
+    }
     result
 }

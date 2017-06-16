@@ -11,27 +11,40 @@
 #' and  \code{worst} are factors or characters, these names must match them.
 #' @param n.classes The number of latent classes.
 #' @param subset An optional vector specifying a subset of observations to be
-#'   used in the fitting process.
+#' used in the fitting process.
 #' @param weights An optional vector of sampling or frequency weights.
 #' @param characteristics Data frame of characteristics on which to run varying coefficients by latent class boosting.
 #' @param seed Seed for initial random class assignments.
 #' @param initial.parameters Specify initial parameters intead of starting at random.
 #' @param sub.model.outputs If TRUE, prints diagnostics on interim models.
 #' @param trace Non-negative integer indicating the detail of outputs provided when fitting models: 0 indicates
-#' @param lc Whether to run latent class step at the end if characteristics are supplied.
 #' no outputs, and 6 is the most detailed outputs.
+#' @param lc Whether to run latent class step at the end if characteristics are supplied.
 #' @param output Output type. Can be "Probabilities" or "Classes".
 #' @param tasks.left.out Number of questions to leave out for cross-validation.
+#' @param distribution The distribution of the parameters. Can be 'Finite', 'Multivariate normal - Spherical',
+#' 'Multivariate normal - Diagonal', 'Multivariate normal - Full covariance'.
+#' @param pool.variance Whether to pool parameter covariances between classes. Applicable when the distribution
+#' is not 'Finite'.
+#' @param lc.tolerance The tolerance used for defining convergence in latent class analysis.
+#' @param n.draws The number of draws when fitting mixtures of normals.
 #' @export
 FitMaxDiff <- function(design, version = NULL, best, worst, alternative.names, n.classes = 1,
                        subset = NULL, weights = NULL, characteristics = NULL, seed = 123,
                        initial.parameters = NULL, trace = 0, sub.model.outputs = FALSE, lc = TRUE,
-                       output = "Probabilities", tasks.left.out = 0)
+                       output = "Probabilities", tasks.left.out = 0, distribution = "Finite",
+                       pool.variance = FALSE, lc.tolerance = 0.0001, n.draws = 100)
 {
     if (!is.null(weights) && !is.null(characteristics))
         stop("Weights are not able to be applied when characteristics are supplied")
     if (!lc && is.null(characteristics))
         stop("There is no model to run. Select covariates and/or run latent class analysis over respondents.")
+    if (!(distribution %in% c("Finite", "Multivariate normal - Spherical", "Multivariate normal - Diagonal",
+                            "Multivariate normal - Full covariance")))
+    if (pool.variance && (distribution == "Finite" || n.classes == 1))
+        stop("Pooling covariances is not possible when the distribution is finite or when there is one class.")
+    if (!is.null(characteristics) && distribution != "Finite")
+        stop("The distribution needs to be finite when characteristics are supplied.")
 
     apply.weights <- is.null(characteristics)
     questions.left.out <- tasks.left.out # we now refer to tasks as questions
@@ -41,13 +54,22 @@ FitMaxDiff <- function(design, version = NULL, best, worst, alternative.names, n
 
     if (is.null(characteristics))
     {
-        result <- latentClassMaxDiff(dat, alternative.names, dat$respondent.indices, NULL, n.classes, seed,
-                                     initial.parameters, 0, trace)
+        if (distribution == "Finite")
+            result <- latentClassMaxDiff(dat, dat$respondent.indices, NULL, n.classes, seed,
+                                         initial.parameters, 0, trace, TRUE, lc.tolerance)
+        else if (distribution %in% c("Multivariate normal - Spherical", "Multivariate normal - Diagonal",
+                                    "Multivariate normal - Full covariance"))
+            result <- mixturesOfNormalsMaxDiff(dat, n.classes, distribution, seed, initial.parameters,
+                                               trace, pool.variance, n.draws)
+        else
+            stop("The distribution parameter is not valid. It needs to be either 'Finite',
+                  'Multivariate normal - Spherical', 'Multivariate normal - Diagonal' or
+                  'Multivariate normal - Full covariance'")
     }
     else
     {
-        result <- varyingCoefficientsMaxDiff(dat, alternative.names, n.classes, seed, initial.parameters,
-                                             trace, apply.weights, lc, sub.model.outputs)
+        result <- varyingCoefficientsMaxDiff(dat, n.classes, seed, initial.parameters,
+                                             trace, apply.weights, lc, sub.model.outputs, lc.tolerance)
     }
 
     n.respondents <- length(dat$respondent.indices)
@@ -81,6 +103,8 @@ FitMaxDiff <- function(design, version = NULL, best, worst, alternative.names, n
 
     resp.pars <- as.matrix(RespondentParameters(result))[dat$subset, ]
     result$respondent.probabilities <- exp(resp.pars) / rowSums(exp(resp.pars))
+    result$distribution <- distribution
+    result$pool.variance <- pool.variance
 
     result
 }
@@ -107,27 +131,12 @@ predictionAccuracies <- function(object, X, n.questions, subset)
 }
 
 #' \code{RespondentParameters}
-#' @description Computes parameters for each respondent.
+#' @description The parameters for each respondent.
 #' @param object A \code{FitMaxDiff} object.
 #' @export
 RespondentParameters <- function(object)
 {
-    pp <- object$posterior.probabilities
-    coef <- object$coef
-    n.classes <- object$n.classes
-    if (n.classes > 1)
-        result <- pp[ , 1, drop = FALSE] %*% t(coef[, 1, drop = FALSE])
-    else
-        result <- pp[ , 1, drop = FALSE] %*% t(coef)
-    if (n.classes > 1)
-        for (c in 2:n.classes)
-            result <- result + pp[ , c, drop = FALSE] %*% t(coef[, c, drop = FALSE])
-    if (!is.null(object$input.respondent.pars))
-        result <- result + object$input.respondent.pars
-    result <- as.data.frame(result)
-
-    names(result) <- if (n.classes > 1) rownames(coef) else names(coef)
-    result
+    as.data.frame(object$respondent.parameters)
 }
 
 #' \code{Memberships}
@@ -157,8 +166,10 @@ print.FitMaxDiff <- function(x, ...)
 {
     title <- if (!is.null(x$covariates.notes))
         "Max-Diff: Varying Coefficients"
-    else
+    else if (x$distribution == "Finite")
         "Max-Diff: Latent Class Analysis"
+    else
+        "Max-Diff: Mixtures of Normals"
     footer <- paste0("n = ", x$n.respondents, "; ")
     if (!is.null(x$subset) && !all(x$subset))
         footer <- paste0(footer, "Filters have been applied; ")
@@ -176,13 +187,25 @@ print.FitMaxDiff <- function(x, ...)
     footer <- paste0(footer, "BIC: ", FormatWithDecimals(x$bic, 2), "; ")
     footer <- if (!x$lc)
         paste0(footer, "Latent class analysis over respondents not applied; ")
+    else if (x$distribution == "Finite")
+    {
+        if (x$n.classes == 1)
+            paste0(footer, "Latent class analysis: ", x$n.classes, " class; ")
+        else
+            paste0(footer, "Latent class analysis: ", x$n.classes, " classes; ")
+    }
     else
     {
         if (x$n.classes == 1)
-            paste0(footer, "Latent class analysis over respondents: ", x$n.classes, " class; ")
+            paste0(footer, "Mixtures of normals: ", x$n.classes, " class; ")
         else
-            paste0(footer, "Latent class analysis over respondents: ", x$n.classes, " classes; ")
+            paste0(footer, "Mixtures of normals: ", x$n.classes, " classes; ")
     }
+
+    if (x$distribution %in% c("Multivariate normal - Spherical", "Multivariate normal - Diagonal"))
+        paste0(footer, "Distribution: ", x$distribution, "; ")
+    if (x$pool.variance)
+        paste0(footer, "Covariances have been pooled; ")
 
     subtitle <- if (!is.na(x$out.sample.accuracy))
         paste0("Prediction accuracy (leave-", x$questions.left.out , "-out cross-validation): ",
@@ -193,7 +216,7 @@ print.FitMaxDiff <- function(x, ...)
     if (x$n.classes == 1 && is.null(x$covariates.notes))
     {
         col.labels <- "Probabilities (%)"
-        MaxDiffTableClasses(as.matrix(x$probabilities), col.labels, title, subtitle, footer)
+        MaxDiffTableClasses(as.matrix(x$class.preference.shares), col.labels, title, subtitle, footer)
     }
     else if (x$output == "Probabilities")
     {
@@ -214,6 +237,6 @@ print.FitMaxDiff <- function(x, ...)
         if (!is.null(x$covariates.notes))
             stop("Class table cannot be displayed when covariates are applied.")
         col.labels <- c(paste("Class", 1:x$n.classes, "(%)<br>Size:", FormatAsPercent(x$class.sizes, 3)), "Total")
-        MaxDiffTableClasses(as.matrix(x$probabilities), col.labels, title, subtitle, footer)
+        MaxDiffTableClasses(as.matrix(x$class.preference.shares), col.labels, title, subtitle, footer)
     }
 }
