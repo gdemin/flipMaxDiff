@@ -136,7 +136,13 @@ predictionAccuracies <- function(object, X, n.questions, subset)
 #' @export
 RespondentParameters <- function(object)
 {
-    as.data.frame(object$respondent.parameters)
+    if (is.null(object$respondent.parameters)) # retained for backwards compatibility
+    {
+        alternative.names <- if (object$n.classes > 1) rownames(object$coef) else names(object$coef)
+        computeRespondentParameters(object, alternative.names, object$input.respondent.parameters)
+    }
+    else
+        as.data.frame(object$respondent.parameters)
 }
 
 #' \code{Memberships}

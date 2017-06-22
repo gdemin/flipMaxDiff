@@ -88,6 +88,11 @@ mixturesOfNormalsMaxDiff <- function(dat, n.classes, distribution, seed = 123, i
     info <- respondentLevelInfo(X, best.pars$class.weights, best.pars$means, best.pars$covariances,
                                 alternative.names, dat$subset, n.classes, n.respondents, n.questions, 1000, n.beta)
 
+    best.covariances <- lapply(best.pars$covariances, function(x) {
+        rownames(x) <- alternative.names[-1]
+        colnames(x) <- alternative.names[-1]
+    })
+
     result <- list(log.likelihood = best.log.likelihood,
                    n.classes = n.classes)
     if (n.classes > 1)
@@ -108,6 +113,7 @@ mixturesOfNormalsMaxDiff <- function(dat, n.classes, distribution, seed = 123, i
         result$class.preference.shares <- exp(coef) / sum(exp(coef))
     }
     result$coef <- coef
+    result$covariances <- best.covariances
     result$effective.sample.size <- ess <- sum(weights) / n.questions
     result$n.parameters <- numberOfParameters(n.beta, n.classes, distribution, pool.variance)
     result$bic <- -2 * best.log.likelihood + log(ess) * result$n.parameters
