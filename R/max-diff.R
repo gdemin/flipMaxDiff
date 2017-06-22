@@ -139,7 +139,7 @@ RespondentParameters <- function(object)
     if (is.null(object$respondent.parameters)) # retained for backwards compatibility
     {
         alternative.names <- if (object$n.classes > 1) rownames(object$coef) else names(object$coef)
-        computeRespondentParameters(object, alternative.names, object$input.respondent.parameters)
+        computeRespondentParameters(object, alternative.names, object$input.respondent.pars)
     }
     else
         as.data.frame(object$respondent.parameters)
