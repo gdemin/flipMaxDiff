@@ -80,7 +80,7 @@ latentClassMaxDiff <- function(dat, ind.levels, resp.pars = NULL, n.classes = 1,
     }
     result$coef <- coef
     result$effective.sample.size <- ess <- sum(weights) / n.questions
-    result$n.parameters <- numberOfParameters(n.beta, n.classes, "Finite", FALSE) + n.previous.parameters
+    result$n.parameters <- numberOfParameters(n.beta, n.classes) + n.previous.parameters
     result$bic <- -2 * ll + log(ess) * result$n.parameters
     result$respondent.parameters <- computeRespondentParameters(result, alternative.names, input.respondent.pars)
     class(result) <- "FitMaxDiff"

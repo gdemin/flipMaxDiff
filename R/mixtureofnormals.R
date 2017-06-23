@@ -1,5 +1,5 @@
 #' @importFrom MASS mvrnorm
-mixturesOfNormalsMaxDiff <- function(dat, n.classes, distribution, seed = 123, initial.parameters = NULL,
+mixturesOfNormalsMaxDiff <- function(dat, n.classes, normal.covariance, seed = 123, initial.parameters = NULL,
                                      trace = 0, pool.variance = FALSE, n.draws = 100)
 {
     n.respondents <- length(dat$respondent.indices)
@@ -69,7 +69,7 @@ mixturesOfNormalsMaxDiff <- function(dat, n.classes, distribution, seed = 123, i
         class.weights <- prop.table(sum.weights)
         means <- parameterMeans(sum.weights, sum.weighted.beta)
         covariances <- parameterCovariances(means, sum.weights, sum.weighted.beta, sum.weighted.squares,
-                                            pool.variance, distribution)
+                                            pool.variance, normal.covariance)
 
         # print(log.likelihood)
 
@@ -115,7 +115,7 @@ mixturesOfNormalsMaxDiff <- function(dat, n.classes, distribution, seed = 123, i
     result$coef <- coef
     result$covariances <- best.covariances
     result$effective.sample.size <- ess <- sum(weights) / n.questions
-    result$n.parameters <- numberOfParameters(n.beta, n.classes, distribution, pool.variance)
+    result$n.parameters <- numberOfParameters(n.beta, n.classes, normal.covariance, pool.variance)
     result$bic <- -2 * best.log.likelihood + log(ess) * result$n.parameters
     result$posterior.probabilities <- info$posterior.probabilities
     result$respondent.parameters <- info$respondent.parameters
@@ -155,7 +155,7 @@ parameterMeans <- function(sum.weights, sum.weighted.beta)
 }
 
 parameterCovariances <- function(means, sum.weights, sum.weighted.beta, sum.weighted.squares, pool.variance,
-                                 distribution)
+                                 normal.covariance)
 {
     n.classes <- length(sum.weights)
     n.beta <- length(sum.weighted.beta[[1]])
@@ -169,7 +169,7 @@ parameterCovariances <- function(means, sum.weights, sum.weighted.beta, sum.weig
             pooled.covariance <- pooled.covariance + sum.weighted.squares[[c]] - cross.term - t(cross.term) +
                 outer(means[[c]], means[[c]]) * sum.weights[c]
         }
-        pooled.covariance <- constrainCovariance(pooled.covariance / sum(sum.weights), distribution)
+        pooled.covariance <- constrainCovariance(pooled.covariance / sum(sum.weights), normal.covariance)
         for (c in 1:n.classes)
             res[[c]] <- pooled.covariance
     }
@@ -180,7 +180,7 @@ parameterCovariances <- function(means, sum.weights, sum.weighted.beta, sum.weig
             cross.term <- outer(means[[c]], sum.weighted.beta[[c]])
             covariance.matrix <- (sum.weighted.squares[[c]] - cross.term - t(cross.term) +
                              outer(means[[c]], means[[c]]) * sum.weights[c]) / sum.weights[c]
-            res[[c]] <- constrainCovariance(covariance.matrix, distribution)
+            res[[c]] <- constrainCovariance(covariance.matrix, normal.covariance)
         }
     }
     res
@@ -196,49 +196,49 @@ logChoiceProb <- function(logs.of.k, class.weights)
     logOfSum(logs.class.sum)
 }
 
-numberOfParameters <- function(n.beta, n.classes, distribution, pool.variance)
+numberOfParameters <- function(n.beta, n.classes, is.mixture.of.normals = FALSE, normal.covariance = NULL,
+                               pool.variance = FALSE)
 {
     result <- n.beta * n.classes + n.classes - 1
-    if (distribution == "Finite")
+    if (is.mixture.of.normals)
     {
-        # nothing
-    }
-    else if (distribution == "Multivariate normal - Spherical")
-    {
-        if (pool.variance)
-            result <- result + 1
+        if (normal.covariance == "Spherical")
+        {
+            if (pool.variance)
+                result <- result + 1
+            else
+                result <- result + n.classes
+        }
+        else if (normal.covariance == "Diagonal")
+        {
+            if (pool.variance)
+                result <- result + n.beta
+            else
+                result <- result + n.beta * n.classes
+        }
+        else if (normal.covariance == "Full")
+        {
+            if (pool.variance)
+                result <- result + 0.5 * n.beta * (n.beta + 1)
+            else
+                result <- result + 0.5 * n.beta * (n.beta + 1) * n.classes
+        }
         else
-            result <- result + n.classes
+            stop(paste("Distribution not handled:", normal.covariance))
     }
-    else if (distribution == "Multivariate normal - Diagonal")
-    {
-        if (pool.variance)
-            result <- result + n.beta
-        else
-            result <- result + n.beta * n.classes
-    }
-    else if (distribution == "Multivariate normal - Full covariance")
-    {
-        if (pool.variance)
-            result <- result + 0.5 * n.beta * (n.beta + 1)
-        else
-            result <- result + 0.5 * n.beta * (n.beta + 1) * n.classes
-    }
-    else
-        stop(paste("Distribution not handled:", distribution))
     result
 }
 
-constrainCovariance <- function(covariance.matrix, distribution)
+constrainCovariance <- function(covariance.matrix, normal.covariance)
 {
-    if (distribution == "Multivariate normal - Spherical")
+    if (normal.covariance == "Spherical")
         result <- diag(rep(mean(diag(covariance.matrix)), ncol(covariance.matrix)))
-    else if (distribution == "Multivariate normal - Diagonal")
+    else if (normal.covariance == "Diagonal")
         result <- diag(diag(covariance.matrix))
-    else if (distribution == "Multivariate normal - Full covariance")
+    else if (normal.covariance == "Full")
         result <- covariance.matrix
     else
-        stop(paste("Distribution not handled:", distribution))
+        stop(paste("Distribution not handled:", normal.covariance))
     result
 }
 

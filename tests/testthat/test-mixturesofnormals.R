@@ -8,7 +8,7 @@ names <- c("Apple", "Microsoft", "IBM", "Google", "Intel", "Samsung", "Sony", "D
 
 test_that("Full covariance", {
     result <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, n.classes = 2,
-                         alternative.names = names, distribution = "Multivariate normal - Full covariance")
+                         alternative.names = names, is.mixture.of.normals = TRUE, normal.covariance = "Full")
     expect_error(print(result), NA)
 })
 
@@ -16,26 +16,26 @@ test_that("Full covariance with subset and weight", {
     sub <- unclass(tech.data$Q2) <= 3
     wgt <- tech.data$RESPNUM
     result <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, n.classes = 2,
-                         alternative.names = names, distribution = "Multivariate normal - Full covariance",
+                         alternative.names = names, is.mixture.of.normals = TRUE, normal.covariance = "Full",
                          subset = sub, weights = wgt)
     expect_error(print(result), NA)
 })
 
 test_that("Spherical", {
     result <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, n.classes = 2,
-                         alternative.names = names, distribution = "Multivariate normal - Spherical")
+                         alternative.names = names, is.mixture.of.normals = TRUE, normal.covariance = "Spherical")
     expect_error(print(result), NA)
 })
 
 test_that("Diagonal", {
     result <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, n.classes = 2,
-                         alternative.names = names, distribution = "Multivariate normal - Diagonal")
+                         alternative.names = names, is.mixture.of.normals = TRUE, normal.covariance = "Diagonal")
     expect_error(print(result), NA)
 })
 
 test_that("Cross-validation", {
     result <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst, n.classes = 2,
-                         alternative.names = names, distribution = "Multivariate normal - Full covariance",
+                         alternative.names = names, is.mixture.of.normals = TRUE, normal.covariance = "Full",
                          tasks.left.out = 2)
     expect_error(print(result), NA)
 })

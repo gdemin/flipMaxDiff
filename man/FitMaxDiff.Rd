@@ -8,8 +8,9 @@ FitMaxDiff(design, version = NULL, best, worst, alternative.names,
   n.classes = 1, subset = NULL, weights = NULL, characteristics = NULL,
   seed = 123, initial.parameters = NULL, trace = 0,
   sub.model.outputs = FALSE, lc = TRUE, output = "Probabilities",
-  tasks.left.out = 0, distribution = "Finite", pool.variance = FALSE,
-  lc.tolerance = 1e-04, n.draws = 100)
+  tasks.left.out = 0, is.mixture.of.normals = FALSE,
+  normal.covariance = "Full", pool.variance = FALSE, lc.tolerance = 1e-04,
+  n.draws = 100)
 }
 \arguments{
 \item{design}{A \code{data.frame}, where the first variable is called 'Version', the second is called 'Task' or 'Question',
@@ -50,11 +51,12 @@ no outputs, and 6 is the most detailed outputs.}
 
 \item{tasks.left.out}{Number of questions to leave out for cross-validation.}
 
-\item{distribution}{The distribution of the parameters. Can be 'Finite', 'Multivariate normal - Spherical',
-'Multivariate normal - Diagonal', 'Multivariate normal - Full covariance'.}
+\item{is.mixture.of.normals}{Whether to model with mixture of normals instead of LCA.}
 
-\item{pool.variance}{Whether to pool parameter covariances between classes. Applicable when the distribution
-is not 'Finite'.}
+\item{normal.covariance}{The form of the covariance matrix for mixture of normals.
+Can be 'Full, 'Spherical', 'Diagonal'.}
+
+\item{pool.variance}{Whether to pool parameter covariances between classes in mixture of normals.}
 
 \item{lc.tolerance}{The tolerance used for defining convergence in latent class analysis.}
 

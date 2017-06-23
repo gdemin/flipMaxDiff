@@ -22,29 +22,27 @@
 #' @param lc Whether to run latent class step at the end if characteristics are supplied.
 #' @param output Output type. Can be "Probabilities" or "Classes".
 #' @param tasks.left.out Number of questions to leave out for cross-validation.
-#' @param distribution The distribution of the parameters. Can be 'Finite', 'Multivariate normal - Spherical',
-#' 'Multivariate normal - Diagonal', 'Multivariate normal - Full covariance'.
-#' @param pool.variance Whether to pool parameter covariances between classes. Applicable when the distribution
-#' is not 'Finite'.
+#' @param is.mixture.of.normals Whether to model with mixture of normals instead of LCA.
+#' @param normal.covariance The form of the covariance matrix for mixture of normals.
+#' Can be 'Full, 'Spherical', 'Diagonal'.
+#' @param pool.variance Whether to pool parameter covariances between classes in mixture of normals.
 #' @param lc.tolerance The tolerance used for defining convergence in latent class analysis.
 #' @param n.draws The number of draws when fitting mixtures of normals.
 #' @export
 FitMaxDiff <- function(design, version = NULL, best, worst, alternative.names, n.classes = 1,
                        subset = NULL, weights = NULL, characteristics = NULL, seed = 123,
                        initial.parameters = NULL, trace = 0, sub.model.outputs = FALSE, lc = TRUE,
-                       output = "Probabilities", tasks.left.out = 0, distribution = "Finite",
-                       pool.variance = FALSE, lc.tolerance = 0.0001, n.draws = 100)
+                       output = "Probabilities", tasks.left.out = 0, is.mixture.of.normals = FALSE,
+                       normal.covariance = "Full", pool.variance = FALSE, lc.tolerance = 0.0001, n.draws = 100)
 {
     if (!is.null(weights) && !is.null(characteristics))
         stop("Weights are not able to be applied when characteristics are supplied")
     if (!lc && is.null(characteristics))
         stop("There is no model to run. Select covariates and/or run latent class analysis over respondents.")
-    if (!(distribution %in% c("Finite", "Multivariate normal - Spherical", "Multivariate normal - Diagonal",
-                            "Multivariate normal - Full covariance")))
-    if (pool.variance && (distribution == "Finite" || n.classes == 1))
-        stop("Pooling covariances is not possible when the distribution is finite or when there is one class.")
-    if (!is.null(characteristics) && distribution != "Finite")
-        stop("The distribution needs to be finite when characteristics are supplied.")
+    if (pool.variance && (!is.mixture.of.normals || n.classes == 1))
+        stop("Pooling covariances is not possible for latent class analysis or when there is one class.")
+    if (!is.null(characteristics) && is.mixture.of.normals)
+        stop("Mixture of normals cannot be selected when characteristics are supplied.")
 
     apply.weights <- is.null(characteristics)
     questions.left.out <- tasks.left.out # we now refer to tasks as questions
@@ -54,17 +52,12 @@ FitMaxDiff <- function(design, version = NULL, best, worst, alternative.names, n
 
     if (is.null(characteristics))
     {
-        if (distribution == "Finite")
+        if (!is.mixture.of.normals == "Finite")
             result <- latentClassMaxDiff(dat, dat$respondent.indices, NULL, n.classes, seed,
                                          initial.parameters, 0, trace, TRUE, lc.tolerance)
-        else if (distribution %in% c("Multivariate normal - Spherical", "Multivariate normal - Diagonal",
-                                    "Multivariate normal - Full covariance"))
-            result <- mixturesOfNormalsMaxDiff(dat, n.classes, distribution, seed, initial.parameters,
-                                               trace, pool.variance, n.draws)
         else
-            stop("The distribution parameter is not valid. It needs to be either 'Finite',
-                  'Multivariate normal - Spherical', 'Multivariate normal - Diagonal' or
-                  'Multivariate normal - Full covariance'")
+            result <- mixturesOfNormalsMaxDiff(dat, n.classes, normal.covariance, seed, initial.parameters,
+                                               trace, pool.variance, n.draws)
     }
     else
     {
@@ -103,9 +96,7 @@ FitMaxDiff <- function(design, version = NULL, best, worst, alternative.names, n
 
     resp.pars <- as.matrix(RespondentParameters(result))[dat$subset, ]
     result$respondent.probabilities <- exp(resp.pars) / rowSums(exp(resp.pars))
-    result$distribution <- distribution
-    result$pool.variance <- pool.variance
-
+    result$is.mixture.of.normals <- is.mixture.of.normals
     result
 }
 
@@ -172,10 +163,10 @@ print.FitMaxDiff <- function(x, ...)
 {
     title <- if (!is.null(x$covariates.notes))
         "Max-Diff: Varying Coefficients"
-    else if (x$distribution == "Finite")
-        "Max-Diff: Latent Class Analysis"
-    else
+    else if (x$is.mixture.of.normals)
         "Max-Diff: Mixtures of Normals"
+    else
+        "Max-Diff: Latent Class Analysis"
     footer <- paste0("n = ", x$n.respondents, "; ")
     if (!is.null(x$subset) && !all(x$subset))
         footer <- paste0(footer, "Filters have been applied; ")
@@ -193,25 +184,20 @@ print.FitMaxDiff <- function(x, ...)
     footer <- paste0(footer, "BIC: ", FormatWithDecimals(x$bic, 2), "; ")
     footer <- if (!x$lc)
         paste0(footer, "Latent class analysis over respondents not applied; ")
-    else if (x$distribution == "Finite")
-    {
-        if (x$n.classes == 1)
-            paste0(footer, "Latent class analysis: ", x$n.classes, " class; ")
-        else
-            paste0(footer, "Latent class analysis: ", x$n.classes, " classes; ")
-    }
-    else
+    else if (x$is.mixture.of.normals)
     {
         if (x$n.classes == 1)
             paste0(footer, "Mixtures of normals: ", x$n.classes, " class; ")
         else
             paste0(footer, "Mixtures of normals: ", x$n.classes, " classes; ")
     }
-
-    if (x$distribution %in% c("Multivariate normal - Spherical", "Multivariate normal - Diagonal"))
-        paste0(footer, "Distribution: ", x$distribution, "; ")
-    if (x$pool.variance)
-        paste0(footer, "Covariances have been pooled; ")
+    else
+    {
+        if (x$n.classes == 1)
+            paste0(footer, "Latent class analysis: ", x$n.classes, " class; ")
+        else
+            paste0(footer, "Latent class analysis: ", x$n.classes, " classes; ")
+    }
 
     subtitle <- if (!is.na(x$out.sample.accuracy))
         paste0("Prediction accuracy (leave-", x$questions.left.out , "-out cross-validation): ",
