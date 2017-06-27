@@ -115,7 +115,7 @@ mixturesOfNormalsMaxDiff <- function(dat, n.classes, normal.covariance, seed = 1
     result$coef <- coef
     result$covariances <- best.covariances
     result$effective.sample.size <- ess <- sum(weights) / n.questions
-    result$n.parameters <- numberOfParameters(n.beta, n.classes, normal.covariance, pool.variance)
+    result$n.parameters <- numberOfParameters(n.beta, n.classes, TRUE, normal.covariance, pool.variance)
     result$bic <- -2 * best.log.likelihood + log(ess) * result$n.parameters
     result$posterior.probabilities <- info$posterior.probabilities
     result$respondent.parameters <- info$respondent.parameters

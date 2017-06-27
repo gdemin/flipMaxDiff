@@ -52,7 +52,7 @@ FitMaxDiff <- function(design, version = NULL, best, worst, alternative.names, n
 
     if (is.null(characteristics))
     {
-        if (!is.mixture.of.normals == "Finite")
+        if (!is.mixture.of.normals)
             result <- latentClassMaxDiff(dat, dat$respondent.indices, NULL, n.classes, seed,
                                          initial.parameters, 0, trace, TRUE, lc.tolerance)
         else
