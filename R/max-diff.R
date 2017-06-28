@@ -27,7 +27,7 @@
 #' Can be 'Full, 'Spherical', 'Diagonal'.
 #' @param pool.variance Whether to pool parameter covariances between classes in mixture of normals.
 #' @param lc.tolerance The tolerance used for defining convergence in latent class analysis.
-#' @param n.draws The number of draws when fitting mixtures of normals.
+#' @param n.draws The number of draws when fitting mixture of normals.
 #' @export
 FitMaxDiff <- function(design, version = NULL, best, worst, alternative.names, n.classes = 1,
                        subset = NULL, weights = NULL, characteristics = NULL, seed = 123,
@@ -56,7 +56,7 @@ FitMaxDiff <- function(design, version = NULL, best, worst, alternative.names, n
             result <- latentClassMaxDiff(dat, dat$respondent.indices, NULL, n.classes, seed,
                                          initial.parameters, 0, trace, TRUE, lc.tolerance)
         else
-            result <- mixturesOfNormalsMaxDiff(dat, n.classes, normal.covariance, seed, initial.parameters,
+            result <- mixtureOfNormalsMaxDiff(dat, n.classes, normal.covariance, seed, initial.parameters,
                                                trace, pool.variance, n.draws)
     }
     else
@@ -164,7 +164,7 @@ print.FitMaxDiff <- function(x, ...)
     title <- if (!is.null(x$covariates.notes))
         "Max-Diff: Varying Coefficients"
     else if (x$is.mixture.of.normals)
-        "Max-Diff: Mixtures of Normals"
+        "Max-Diff: Mixture of Normals"
     else
         "Max-Diff: Latent Class Analysis"
     footer <- paste0("n = ", x$n.respondents, "; ")
@@ -187,9 +187,9 @@ print.FitMaxDiff <- function(x, ...)
     else if (x$is.mixture.of.normals)
     {
         if (x$n.classes == 1)
-            paste0(footer, "Mixtures of normals: ", x$n.classes, " class; ")
+            paste0(footer, "Mixture of normals: ", x$n.classes, " class; ")
         else
-            paste0(footer, "Mixtures of normals: ", x$n.classes, " classes; ")
+            paste0(footer, "Mixture of normals: ", x$n.classes, " classes; ")
     }
     else
     {
@@ -205,7 +205,8 @@ print.FitMaxDiff <- function(x, ...)
     else
         paste0("Prediction accuracy (in-sample): ", FormatAsPercent(x$in.sample.accuracy, 3))
 
-    if (x$n.classes == 1 && is.null(x$covariates.notes))
+    if (x$n.classes == 1 && is.null(x$covariates.notes)
+        && (!x$is.mixture.of.normals || x$output == "Classes"))
     {
         col.labels <- "Probabilities (%)"
         MaxDiffTableClasses(as.matrix(x$class.preference.shares), col.labels, title, subtitle, footer)

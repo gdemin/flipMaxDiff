@@ -1,5 +1,5 @@
 #' @importFrom MASS mvrnorm
-mixturesOfNormalsMaxDiff <- function(dat, n.classes, normal.covariance, seed = 123, initial.parameters = NULL,
+mixtureOfNormalsMaxDiff <- function(dat, n.classes, normal.covariance, seed = 123, initial.parameters = NULL,
                                      trace = 0, pool.variance = FALSE, n.draws = 100)
 {
     n.respondents <- length(dat$respondent.indices)
@@ -91,6 +91,7 @@ mixturesOfNormalsMaxDiff <- function(dat, n.classes, normal.covariance, seed = 1
     best.covariances <- lapply(best.pars$covariances, function(x) {
         rownames(x) <- alternative.names[-1]
         colnames(x) <- alternative.names[-1]
+        x
     })
 
     result <- list(log.likelihood = best.log.likelihood,
