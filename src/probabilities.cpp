@@ -39,8 +39,8 @@ NumericVector densitiesP(NumericMatrix e_u)
     } while (is_true(any(phi)));
 
     for (int i = 0; i < n; i++)
-        if (result[i] < 0)
-            result[i] = 0;
+        if (result[i] <= 0)
+            result[i] = 1e-16;
 
     return result;
 }
