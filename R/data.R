@@ -126,9 +126,8 @@ cleanAndCheckData <- function(design, version = NULL, best, worst, alternative.n
     version <- version[subset]
     versions.in.variable <- sort(unique(version))
     versions.in.design <- sort(unique(design$Version))
-    compare.version <- all.equal(versions.in.variable, versions.in.design)
-    if (is.character(compare.version))
-        stop("The 'design' and 'version' have incompatible version numbers.")
+    if (!all(versions.in.variable %in% versions.in.design))
+        stop("The data contains version numbers that are not in the design.")
     # Renaming 'Task' as 'Question'
     task.index <- match("Task", names(design))
     if (!is.na(task.index))
