@@ -2,26 +2,26 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 densitiesP <- function(e_u) {
-    .Call('flipMaxDiff_densitiesP', PACKAGE = 'flipMaxDiff', e_u)
+    .Call(`_flipMaxDiff_densitiesP`, e_u)
 }
 
 logDensitiesBestWorst <- function(e_u, weights) {
-    .Call('flipMaxDiff_logDensitiesBestWorst', PACKAGE = 'flipMaxDiff', e_u, weights)
+    .Call(`_flipMaxDiff_logDensitiesBestWorst`, e_u, weights)
 }
 
 logDensityBestWorst <- function(e_u, weights) {
-    .Call('flipMaxDiff_logDensityBestWorst', PACKAGE = 'flipMaxDiff', e_u, weights)
+    .Call(`_flipMaxDiff_logDensityBestWorst`, e_u, weights)
 }
 
 gradientBestWorst <- function(e_u, x, weights, n_pars) {
-    .Call('flipMaxDiff_gradientBestWorst', PACKAGE = 'flipMaxDiff', e_u, x, weights, n_pars)
+    .Call(`_flipMaxDiff_gradientBestWorst`, e_u, x, weights, n_pars)
 }
 
 logKernels <- function(beta_draws, x, weights) {
-    .Call('flipMaxDiff_logKernels', PACKAGE = 'flipMaxDiff', beta_draws, x, weights)
+    .Call(`_flipMaxDiff_logKernels`, beta_draws, x, weights)
 }
 
 sumWeightedOuterProducts <- function(beta_draws, weights) {
-    .Call('flipMaxDiff_sumWeightedOuterProducts', PACKAGE = 'flipMaxDiff', beta_draws, weights)
+    .Call(`_flipMaxDiff_sumWeightedOuterProducts`, beta_draws, weights)
 }
 

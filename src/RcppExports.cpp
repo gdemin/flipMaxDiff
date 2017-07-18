@@ -7,7 +7,7 @@ using namespace Rcpp;
 
 // densitiesP
 NumericVector densitiesP(NumericMatrix e_u);
-RcppExport SEXP flipMaxDiff_densitiesP(SEXP e_uSEXP) {
+RcppExport SEXP _flipMaxDiff_densitiesP(SEXP e_uSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -18,7 +18,7 @@ END_RCPP
 }
 // logDensitiesBestWorst
 NumericVector logDensitiesBestWorst(NumericMatrix e_u, NumericVector weights);
-RcppExport SEXP flipMaxDiff_logDensitiesBestWorst(SEXP e_uSEXP, SEXP weightsSEXP) {
+RcppExport SEXP _flipMaxDiff_logDensitiesBestWorst(SEXP e_uSEXP, SEXP weightsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -30,7 +30,7 @@ END_RCPP
 }
 // logDensityBestWorst
 double logDensityBestWorst(NumericMatrix e_u, NumericVector weights);
-RcppExport SEXP flipMaxDiff_logDensityBestWorst(SEXP e_uSEXP, SEXP weightsSEXP) {
+RcppExport SEXP _flipMaxDiff_logDensityBestWorst(SEXP e_uSEXP, SEXP weightsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -42,7 +42,7 @@ END_RCPP
 }
 // gradientBestWorst
 NumericVector gradientBestWorst(NumericMatrix e_u, IntegerMatrix x, NumericVector weights, int n_pars);
-RcppExport SEXP flipMaxDiff_gradientBestWorst(SEXP e_uSEXP, SEXP xSEXP, SEXP weightsSEXP, SEXP n_parsSEXP) {
+RcppExport SEXP _flipMaxDiff_gradientBestWorst(SEXP e_uSEXP, SEXP xSEXP, SEXP weightsSEXP, SEXP n_parsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -56,7 +56,7 @@ END_RCPP
 }
 // logKernels
 NumericVector logKernels(NumericMatrix beta_draws, IntegerMatrix x, NumericVector weights);
-RcppExport SEXP flipMaxDiff_logKernels(SEXP beta_drawsSEXP, SEXP xSEXP, SEXP weightsSEXP) {
+RcppExport SEXP _flipMaxDiff_logKernels(SEXP beta_drawsSEXP, SEXP xSEXP, SEXP weightsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -69,7 +69,7 @@ END_RCPP
 }
 // sumWeightedOuterProducts
 NumericMatrix sumWeightedOuterProducts(NumericMatrix beta_draws, NumericVector weights);
-RcppExport SEXP flipMaxDiff_sumWeightedOuterProducts(SEXP beta_drawsSEXP, SEXP weightsSEXP) {
+RcppExport SEXP _flipMaxDiff_sumWeightedOuterProducts(SEXP beta_drawsSEXP, SEXP weightsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -78,4 +78,19 @@ BEGIN_RCPP
     rcpp_result_gen = Rcpp::wrap(sumWeightedOuterProducts(beta_draws, weights));
     return rcpp_result_gen;
 END_RCPP
+}
+
+static const R_CallMethodDef CallEntries[] = {
+    {"_flipMaxDiff_densitiesP", (DL_FUNC) &_flipMaxDiff_densitiesP, 1},
+    {"_flipMaxDiff_logDensitiesBestWorst", (DL_FUNC) &_flipMaxDiff_logDensitiesBestWorst, 2},
+    {"_flipMaxDiff_logDensityBestWorst", (DL_FUNC) &_flipMaxDiff_logDensityBestWorst, 2},
+    {"_flipMaxDiff_gradientBestWorst", (DL_FUNC) &_flipMaxDiff_gradientBestWorst, 4},
+    {"_flipMaxDiff_logKernels", (DL_FUNC) &_flipMaxDiff_logKernels, 3},
+    {"_flipMaxDiff_sumWeightedOuterProducts", (DL_FUNC) &_flipMaxDiff_sumWeightedOuterProducts, 2},
+    {NULL, NULL, 0}
+};
+
+RcppExport void R_init_flipMaxDiff(DllInfo *dll) {
+    R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
+    R_useDynamicSymbols(dll, FALSE);
 }

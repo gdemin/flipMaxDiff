@@ -60,7 +60,7 @@ Can be 'Full, 'Spherical', 'Diagonal'.}
 
 \item{lc.tolerance}{The tolerance used for defining convergence in latent class analysis.}
 
-\item{n.draws}{The number of draws when fitting mixtures of normals.}
+\item{n.draws}{The number of draws when fitting mixture of normals.}
 }
 \description{
 Fits a latent class rank-ordered logit model with ties to a max-diff experiment.
