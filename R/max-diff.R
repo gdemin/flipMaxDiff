@@ -39,8 +39,6 @@ FitMaxDiff <- function(design, version = NULL, best, worst, alternative.names, n
         stop("Weights are not able to be applied when characteristics are supplied")
     if (!lc && is.null(characteristics))
         stop("There is no model to run. Select covariates and/or run latent class analysis over respondents.")
-    if (pool.variance && (!is.mixture.of.normals || n.classes == 1))
-        stop("Pooling covariances is not possible for latent class analysis or when there is one class.")
     if (!is.null(characteristics) && is.mixture.of.normals)
         stop("Mixture of normals cannot be selected when characteristics are supplied.")
 
