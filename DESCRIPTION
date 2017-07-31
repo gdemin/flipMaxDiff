@@ -1,10 +1,10 @@
 Package: flipMaxDiff
 Type: Package
-Title: Max-Diff Experimental Design and Analysis
+Title: MaxDiff Experimental Design and Analysis
 Version: 0.1.0
 Author: Displayr <opensource@displayr.com>
 Maintainer: Displayr <opensource@displayr.com>
-Description: Max-Diff experimental design, and estimation of variants of rank-ordered logit model with ties.
+Description: MaxDiff experimental design, and estimation of variants of rank-ordered logit model with ties.
 License: GPL-3
 Encoding: UTF-8
 LazyData: true

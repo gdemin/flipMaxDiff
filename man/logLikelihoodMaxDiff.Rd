@@ -16,5 +16,5 @@ logLikelihoodMaxDiff(b, X, boost, weights)
 \item{weights}{An optional vector of sampling or frequency weights.}
 }
 \description{
-The log-likelihood for a max-diff experiment.
+The log-likelihood for a MaxDiff experiment.
 }

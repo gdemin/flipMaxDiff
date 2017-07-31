@@ -160,11 +160,11 @@ Memberships <- function(object)
 print.FitMaxDiff <- function(x, ...)
 {
     title <- if (!is.null(x$covariates.notes))
-        "Max-Diff: Varying Coefficients"
+        "MaxDiff: Varying Coefficients"
     else if (x$is.mixture.of.normals)
-        "Max-Diff: Mixture of Normals"
+        "MaxDiff: Mixture of Normals"
     else
-        "Max-Diff: Latent Class Analysis"
+        "MaxDiff: Latent Class Analysis"
     footer <- paste0("n = ", x$n.respondents, "; ")
     if (!is.null(x$subset) && !all(x$subset))
         footer <- paste0(footer, "Filters have been applied; ")

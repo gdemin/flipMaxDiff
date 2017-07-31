@@ -11,5 +11,5 @@ CheckMaxDiffDesign(design)
 shows the alternatives to be shown.}
 }
 \description{
-Produces summary statistics for a max-diff design.
+Produces summary statistics for a MaxDiff design.
 }

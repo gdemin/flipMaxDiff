@@ -1,7 +1,7 @@
 #' \code{MaxDiffDesign}
-#' @description Creates an experimental design for a max-diff experiment.
+#' @description Creates an experimental design for a MaxDiff experiment.
 #' @param number.alternatives The number of alternatives in the experiment. For example, if you are doing a study investigating preferences for 10 brands, then 10 is the number of alternatives.
-#' @param number.questions The number of max-diff questions to show to respondents. Sawtooth Software suggests that a rough guideline is: \code{Number of questions >= 3 * Number of alternatives / Alternatives per question}.
+#' @param number.questions The number of MaxDiff questions to show to respondents. Sawtooth Software suggests that a rough guideline is: \code{Number of questions >= 3 * Number of alternatives / Alternatives per question}.
 #' @param alternatives.per.question For example, if you have a study of 10 brands, and in each question you show five brands, asking the respondent to choose the one of the five that they like the most and the one that they like the least, then \code{Alternatives per question = 5}. That is, the number of options shown in each question.
 #' @param n.repeats The number of times that the algorithm seeks to find a solution. The higher the number, the greater the chance that the best possible solution is found. For most problems, this makes little difference (i.e., a marginally sub-optimal experimental design will tend not to have any meaningful consequence on the conclusions drawn from the analyses).
 #' @param n.versions The number of versions of the experimental design (defaults to 1). Subsequent versions are obtained by permuting the columns of the binary design.
@@ -81,7 +81,7 @@ multipleVersionDesign <- function(original, n.versions)
 
 
 #' \code{CheckMaxDiffDesign}
-#' @description Produces summary statistics for a max-diff design.
+#' @description Produces summary statistics for a MaxDiff design.
 #' @param design A \code{\link{matrix}}, where each row represents a question or task, and each column
 #' shows the alternatives to be shown.
 #' @export

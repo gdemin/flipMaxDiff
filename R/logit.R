@@ -14,7 +14,7 @@ optimizeMaxDiff <- function(X, boost, weights, n.pars, trace = 0)
 }
 
 #' \code{dMaxDiff}
-#' @description The log-likelihood for a max-diff experiment.
+#' @description The log-likelihood for a MaxDiff experiment.
 #' @param b A vector of parameter estimates.
 #' @param X The experimental design for a sample (a \code{\link{list}})
 #' @param boost Boosting constants.
