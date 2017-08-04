@@ -172,4 +172,22 @@ test_that("Experimental designs with versions", {
 
 })
 
+test_that("Tricked logit", {
+    # Aggregate
+    expect_error(print(FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst,
+                         alternative.names = names, is.tricked = TRUE)), NA)
 
+    # Weighted
+    wgt <- tech.data$RESPNUM
+    expect_error(print(FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst,
+                                  alternative.names = names, is.tricked = TRUE, weights = wgt)), NA)
+
+    # Latent class analysis
+    expect_error(print(FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst,
+                         alternative.names = names, is.tricked = TRUE, n.classes = 2)), NA)
+
+    # Varying coefficients
+    expect_error(print(FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst,
+                           alternative.names = names, characteristics = data.frame(tech.data$Q3_01),
+                           n.classes = 2, is.tricked = TRUE)), NA)
+})

@@ -13,7 +13,8 @@ Imports: AlgDesign,
          flipData,
          flipFormat,
          flipTransformations,
-         Rcpp (>= 0.12.10)
+         Rcpp (>= 0.12.10),
+         rstan
 Suggests: testthat,
          foreign
 LinkingTo: Rcpp

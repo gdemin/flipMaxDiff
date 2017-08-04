@@ -12,7 +12,6 @@ LogicalVector nextCombination(LogicalVector comb)
     return comb;
 }
 
-// [[Rcpp::export]]
 NumericVector densitiesP(NumericMatrix e_u)
 {
     int n = e_u.nrow();
@@ -45,8 +44,7 @@ NumericVector densitiesP(NumericMatrix e_u)
     return result;
 }
 
-// [[Rcpp::export]]
-NumericVector logDensitiesBestWorst(NumericMatrix e_u, NumericVector weights)
+NumericVector logDensitiesMaxDiffRankOrdered(NumericMatrix e_u, NumericVector weights)
 {
     int n = e_u.nrow();
     int n_choices = e_u.ncol();
@@ -70,14 +68,42 @@ NumericVector logDensitiesBestWorst(NumericMatrix e_u, NumericVector weights)
     return result;
 }
 
-// [[Rcpp::export]]
-double logDensityBestWorst(NumericMatrix e_u, NumericVector weights)
+NumericVector logDensitiesMaxDiffTricked(NumericMatrix e_u, NumericVector weights)
 {
-    return sum(logDensitiesBestWorst(e_u, weights));
+    int n = e_u.nrow();
+    int n_choices = e_u.ncol();
+    NumericVector result(n);
+    for (int i = 0; i < n; i++)
+    {
+        double sum_positive_exp = 0;
+        double sum_negative_exp = 0;
+        for (int j = 0; j < n_choices; j++)
+        {
+            sum_positive_exp += e_u(i, j);
+            sum_negative_exp += 1 / e_u(i, j);
+        }
+        result[i] = (log(e_u(i, 0)) - log(e_u(i, n_choices - 1)) - log(sum_positive_exp) - log(sum_negative_exp))
+                    * weights[i];
+    }
+    return result;
 }
 
 // [[Rcpp::export]]
-NumericVector gradientBestWorst(NumericMatrix e_u, IntegerMatrix x, NumericVector weights, int n_pars)
+NumericVector logDensitiesMaxDiff(NumericMatrix e_u, NumericVector weights, bool is_tricked = false)
+{
+    if (is_tricked)
+        return logDensitiesMaxDiffTricked(e_u, weights);
+    else
+        return logDensitiesMaxDiffRankOrdered(e_u, weights);
+}
+
+// [[Rcpp::export]]
+double logDensityMaxDiff(NumericMatrix e_u, NumericVector weights, bool is_tricked = false)
+{
+    return sum(logDensitiesMaxDiff(e_u, weights, is_tricked));
+}
+
+NumericVector gradientMaxDiffRankOrdered(NumericMatrix e_u, IntegerMatrix x, NumericVector weights, int n_pars)
 {
     int n = e_u.nrow();
     int n_choices = e_u.ncol();
@@ -171,8 +197,59 @@ NumericVector gradientBestWorst(NumericMatrix e_u, IntegerMatrix x, NumericVecto
     return result;
 }
 
+NumericVector gradientMaxDiffTricked(NumericMatrix e_u, IntegerMatrix x, NumericVector weights, int n_pars)
+{
+    int n = e_u.nrow();
+    int n_choices = e_u.ncol();
+    NumericVector result(n_pars);
+
+    if (n_choices < 2)
+        return result;
+
+    // Gradient component for the best selection
+    for (int i = 0; i < n; i++)
+    {
+        double non_best = 0;
+        for (int j = 1; j < n_choices; j++)
+            non_best += e_u(i, j);
+        double total = e_u(i, 0) + non_best;
+        if (x(i, 0) > 0)
+            result[x(i, 0) - 1] += non_best * weights[i] / total;
+        for (int j = 1; j < n_choices; j++)
+            if (x(i, j) > 0)
+                result[x(i, j) - 1] -= e_u(i, j) * weights[i] / total;
+    }
+
+    // Gradient component for the worst selection
+    for (int i = 0; i < n; i++)
+    {
+        double non_worst = 0;
+        for (int j = 0; j < n_choices - 1; j++)
+            non_worst += 1 / e_u(i, j);
+        double total = 1 / e_u(i, n_choices - 1) + non_worst;
+        if (x(i, n_choices - 1) > 0)
+            result[x(i, n_choices - 1) - 1] -= non_worst * weights[i] / total;
+        for (int j = 1; j < n_choices; j++)
+            if (x(i, j) > 0)
+                result[x(i, j) - 1] += weights[i] / (total * e_u(i, j));
+    }
+
+    return result;
+}
+
 // [[Rcpp::export]]
-NumericVector logKernels(NumericMatrix beta_draws, IntegerMatrix x, NumericVector weights)
+NumericVector gradientMaxDiff(NumericMatrix e_u, IntegerMatrix x, NumericVector weights, int n_pars,
+                              bool is_tricked)
+{
+    if (is_tricked)
+        return gradientMaxDiffTricked(e_u, x, weights, n_pars);
+    else
+        return gradientMaxDiffRankOrdered(e_u, x, weights, n_pars);
+}
+
+// [[Rcpp::export]]
+NumericVector logKernels(NumericMatrix beta_draws, IntegerMatrix x, NumericVector weights,
+                         bool is_tricked = false)
 {
     int n_draws = beta_draws.nrow();
     int n = x.nrow();
@@ -190,7 +267,7 @@ NumericVector logKernels(NumericMatrix beta_draws, IntegerMatrix x, NumericVecto
                 else
                     e_u(i, j) = 1;
             }
-        logs_of_k[d] = logDensityBestWorst(e_u, weights);
+        logs_of_k[d] = logDensityMaxDiff(e_u, weights, is_tricked);
     }
     return logs_of_k;
 }

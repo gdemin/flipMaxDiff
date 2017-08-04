@@ -9,8 +9,9 @@ FitMaxDiff(design, version = NULL, best, worst, alternative.names,
   seed = 123, initial.parameters = NULL, trace = 0,
   sub.model.outputs = FALSE, lc = TRUE, output = "Probabilities",
   tasks.left.out = 0, is.mixture.of.normals = FALSE,
-  normal.covariance = "Full", pool.variance = FALSE, lc.tolerance = 1e-04,
-  n.draws = 100)
+  algorithm = "Default", normal.covariance = "Full",
+  pool.variance = FALSE, lc.tolerance = 1e-04, n.draws = 100,
+  is.tricked = FALSE, hb.iterations = 100, hb.chains = 1)
 }
 \arguments{
 \item{design}{A \code{data.frame}, where the first variable is called 'Version', the second is called 'Task' or 'Question',
@@ -53,6 +54,8 @@ no outputs, and 6 is the most detailed outputs.}
 
 \item{is.mixture.of.normals}{Whether to model with mixture of normals instead of LCA.}
 
+\item{algorithm}{If "HB", Hierarchical Bayes with a MVN prior is used and the other parameters are ignored.}
+
 \item{normal.covariance}{The form of the covariance matrix for mixture of normals.
 Can be 'Full, 'Spherical', 'Diagonal'.}
 
@@ -61,6 +64,12 @@ Can be 'Full, 'Spherical', 'Diagonal'.}
 \item{lc.tolerance}{The tolerance used for defining convergence in latent class analysis.}
 
 \item{n.draws}{The number of draws when fitting mixture of normals.}
+
+\item{is.tricked}{Whether to use tricked logit instead of rank-ordered logit with ties.}
+
+\item{hb.iterations}{The number of iterations in Hierarchical Bayes.}
+
+\item{hb.chains}{The number of chains in Hierarchical Bayes.}
 }
 \description{
 Fits a latent class rank-ordered logit model with ties to a max-diff experiment.

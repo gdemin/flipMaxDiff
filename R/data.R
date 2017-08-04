@@ -19,8 +19,8 @@ IntegrateDesignAndData <- function(design, version, best, worst, seed, questions
     n.questions <- ncol(best)
     if (n.questions != ncol(worst))
         stop("'best' and 'worst' need to have the same number of columns.")
-    n.alternatives <- ncol(design) - 2
-    X <- matrix(NA, ncol = n.alternatives, nrow = n * n.questions)
+    n.choices <- ncol(design) - 2
+    X <- matrix(NA, ncol = n.choices, nrow = n * n.questions)
     respondent.indices = vector("list", n)
     c = 1
     for (i in 1:n)
@@ -52,7 +52,7 @@ IntegrateDesignAndData <- function(design, version, best, worst, seed, questions
     }
     else
     {
-        left.out <- leftOutquestions(n, n.questions, questions.left.out, seed)
+        left.out <- leftOutQuestions(n, n.questions, questions.left.out, seed)
         X.in <- X[!left.out, ]
         X.out <- X[left.out, ]
         questions.left.in <- n.questions - questions.left.out
@@ -172,7 +172,7 @@ cleanAndCheckData <- function(design, version = NULL, best, worst, alternative.n
          subset = subset)
 }
 
-leftOutquestions <- function(n.respondents, n.questions, n.questions.left.out, seed)
+leftOutQuestions <- function(n.respondents, n.questions, n.questions.left.out, seed)
 {
     set.seed(seed)
     sapply(rep(n.questions, n.respondents), function(x) (1:n.questions) %in% sample(x, n.questions.left.out))

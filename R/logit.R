@@ -1,13 +1,15 @@
 #' @importFrom stats cor optim
-optimizeMaxDiff <- function(X, boost, weights, n.pars, trace = 0)
+optimizeMaxDiff <- function(X, boost, weights, n.pars, trace = 0, is.tricked = FALSE)
 {
     init.b <- seq(.01, .02, length.out = n.pars)
     optim(init.b,
           logLikelihoodMaxDiff,
-          gr = gradientMaxDiff,
+          gr = gradientMaxDiffR,
+          # gr = NULL,
           X = X,
           boost = boost,
           weights = weights,
+          is.tricked = is.tricked,
           method =  "BFGS",
           control = list(fnscale  = -1, maxit = 1000, trace = trace),
           hessian = FALSE)
@@ -19,19 +21,20 @@ optimizeMaxDiff <- function(X, boost, weights, n.pars, trace = 0)
 #' @param X The experimental design for a sample (a \code{\link{list}})
 #' @param boost Boosting constants.
 #' @param weights An optional vector of sampling or frequency weights.
-logLikelihoodMaxDiff <- function(b, X, boost, weights)
+#' @param is.tricked Whether to use tricked logit instead of rank-ordered logit with ties.
+logLikelihoodMaxDiff <- function(b, X, boost, weights, is.tricked)
 {
     b[b > 100] = 100
     b[b < -100] = -100
 
     e.u <- exp(matrix(c(0, b)[X], ncol = ncol(X)) + boost)
-    logDensityBestWorst(e.u, weights)
+    logDensityMaxDiff(e.u, weights, is.tricked)
 }
 
-gradientMaxDiff <- function(b, X, boost, weights)
+gradientMaxDiffR <- function(b, X, boost, weights, is.tricked)
 {
     b[b > 100] = 100
     b[b < -100] = -100
     e.u <- exp(matrix(c(0, b)[X], ncol = ncol(X)) + boost)
-    gradientBestWorst(e.u, X - 1, weights, length(b))
+    gradientMaxDiff(e.u, X - 1, weights, length(b), is.tricked)
 }

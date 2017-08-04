@@ -1,5 +1,5 @@
-varyingCoefficientsMaxDiff <- function(dat, n.classes, seed, initial.parameters,
-                                       trace, apply.weights, lc, sub.model.outputs, lc.tolerance)
+varyingCoefficientsMaxDiff <- function(dat, n.classes, seed, initial.parameters, trace, apply.weights, lc,
+                                       sub.model.outputs, lc.tolerance, is.tricked)
 {
     n.respondents <- length(dat$respondent.indices)
     n.questions.in <- dat$n.questions.in
@@ -20,23 +20,25 @@ varyingCoefficientsMaxDiff <- function(dat, n.classes, seed, initial.parameters,
             n.levels <- length(ind.levels)
             best.bic <- Inf
             best.solution <- NULL
+            best.n.classes <- NULL
             # Loop over all possible class sizes
             for (n.c in 1:n.levels)
             {
                 solution <- latentClassMaxDiff(dat, ind.levels, resp.pars, n.c, seed,
                                                initial.parameters, n.previous.parameters, trace,
-                                               apply.weights = apply.weights, lc.tolerance)
+                                               apply.weights = apply.weights, lc.tolerance, is.tricked)
                 if (solution$bic < best.bic)
                 {
                     best.bic <- solution$bic
                     best.solution <- solution
+                    best.n.classes <- n.c
                 }
             }
-            if (best.solution$n.classes > 1)
+            if (best.n.classes > 1)
             {
                 resp.pars <- as.matrix(RespondentParameters(best.solution))[dat$subset, ]
                 n.previous.parameters <- best.solution$n.parameters
-                covariates.notes[i] <- paste0(names(characteristics)[i], " - ", best.solution$n.classes, " classes")
+                covariates.notes[i] <- paste0(names(characteristics)[i], " - ", best.n.classes, " classes")
                 covariates.chosen <- TRUE
             }
             else
@@ -46,7 +48,7 @@ varyingCoefficientsMaxDiff <- function(dat, n.classes, seed, initial.parameters,
                     cat("Covariate:", names(characteristics)[i],
                         "BIC:", best.solution$bic,
                         "LL:", best.solution$log.likelihood,
-                        "Number of classes:", best.solution$n.classes,
+                        "Number of classes:", best.n.classes,
                         (if (best.solution$n.classes == 1) "Excluded" else "Included in final model"),
                         "\n")
             }
@@ -55,7 +57,7 @@ varyingCoefficientsMaxDiff <- function(dat, n.classes, seed, initial.parameters,
 
     result <- if (lc || is.null(characteristics))
         latentClassMaxDiff(dat, dat$respondent.indices, resp.pars, n.classes, seed, initial.parameters,
-                           n.previous.parameters, trace, apply.weights, lc.tolerance)
+                           n.previous.parameters, trace, apply.weights, lc.tolerance, is.tricked)
     else if (covariates.chosen)
         best.solution
     else

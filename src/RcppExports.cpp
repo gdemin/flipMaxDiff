@@ -5,44 +5,35 @@
 
 using namespace Rcpp;
 
-// densitiesP
-NumericVector densitiesP(NumericMatrix e_u);
-RcppExport SEXP _flipMaxDiff_densitiesP(SEXP e_uSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericMatrix >::type e_u(e_uSEXP);
-    rcpp_result_gen = Rcpp::wrap(densitiesP(e_u));
-    return rcpp_result_gen;
-END_RCPP
-}
-// logDensitiesBestWorst
-NumericVector logDensitiesBestWorst(NumericMatrix e_u, NumericVector weights);
-RcppExport SEXP _flipMaxDiff_logDensitiesBestWorst(SEXP e_uSEXP, SEXP weightsSEXP) {
+// logDensitiesMaxDiff
+NumericVector logDensitiesMaxDiff(NumericMatrix e_u, NumericVector weights, bool is_tricked);
+RcppExport SEXP _flipMaxDiff_logDensitiesMaxDiff(SEXP e_uSEXP, SEXP weightsSEXP, SEXP is_trickedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericMatrix >::type e_u(e_uSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type weights(weightsSEXP);
-    rcpp_result_gen = Rcpp::wrap(logDensitiesBestWorst(e_u, weights));
+    Rcpp::traits::input_parameter< bool >::type is_tricked(is_trickedSEXP);
+    rcpp_result_gen = Rcpp::wrap(logDensitiesMaxDiff(e_u, weights, is_tricked));
     return rcpp_result_gen;
 END_RCPP
 }
-// logDensityBestWorst
-double logDensityBestWorst(NumericMatrix e_u, NumericVector weights);
-RcppExport SEXP _flipMaxDiff_logDensityBestWorst(SEXP e_uSEXP, SEXP weightsSEXP) {
+// logDensityMaxDiff
+double logDensityMaxDiff(NumericMatrix e_u, NumericVector weights, bool is_tricked);
+RcppExport SEXP _flipMaxDiff_logDensityMaxDiff(SEXP e_uSEXP, SEXP weightsSEXP, SEXP is_trickedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericMatrix >::type e_u(e_uSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type weights(weightsSEXP);
-    rcpp_result_gen = Rcpp::wrap(logDensityBestWorst(e_u, weights));
+    Rcpp::traits::input_parameter< bool >::type is_tricked(is_trickedSEXP);
+    rcpp_result_gen = Rcpp::wrap(logDensityMaxDiff(e_u, weights, is_tricked));
     return rcpp_result_gen;
 END_RCPP
 }
-// gradientBestWorst
-NumericVector gradientBestWorst(NumericMatrix e_u, IntegerMatrix x, NumericVector weights, int n_pars);
-RcppExport SEXP _flipMaxDiff_gradientBestWorst(SEXP e_uSEXP, SEXP xSEXP, SEXP weightsSEXP, SEXP n_parsSEXP) {
+// gradientMaxDiff
+NumericVector gradientMaxDiff(NumericMatrix e_u, IntegerMatrix x, NumericVector weights, int n_pars, bool is_tricked);
+RcppExport SEXP _flipMaxDiff_gradientMaxDiff(SEXP e_uSEXP, SEXP xSEXP, SEXP weightsSEXP, SEXP n_parsSEXP, SEXP is_trickedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -50,20 +41,22 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< IntegerMatrix >::type x(xSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type weights(weightsSEXP);
     Rcpp::traits::input_parameter< int >::type n_pars(n_parsSEXP);
-    rcpp_result_gen = Rcpp::wrap(gradientBestWorst(e_u, x, weights, n_pars));
+    Rcpp::traits::input_parameter< bool >::type is_tricked(is_trickedSEXP);
+    rcpp_result_gen = Rcpp::wrap(gradientMaxDiff(e_u, x, weights, n_pars, is_tricked));
     return rcpp_result_gen;
 END_RCPP
 }
 // logKernels
-NumericVector logKernels(NumericMatrix beta_draws, IntegerMatrix x, NumericVector weights);
-RcppExport SEXP _flipMaxDiff_logKernels(SEXP beta_drawsSEXP, SEXP xSEXP, SEXP weightsSEXP) {
+NumericVector logKernels(NumericMatrix beta_draws, IntegerMatrix x, NumericVector weights, bool is_tricked);
+RcppExport SEXP _flipMaxDiff_logKernels(SEXP beta_drawsSEXP, SEXP xSEXP, SEXP weightsSEXP, SEXP is_trickedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< NumericMatrix >::type beta_draws(beta_drawsSEXP);
     Rcpp::traits::input_parameter< IntegerMatrix >::type x(xSEXP);
     Rcpp::traits::input_parameter< NumericVector >::type weights(weightsSEXP);
-    rcpp_result_gen = Rcpp::wrap(logKernels(beta_draws, x, weights));
+    Rcpp::traits::input_parameter< bool >::type is_tricked(is_trickedSEXP);
+    rcpp_result_gen = Rcpp::wrap(logKernels(beta_draws, x, weights, is_tricked));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -81,11 +74,10 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_flipMaxDiff_densitiesP", (DL_FUNC) &_flipMaxDiff_densitiesP, 1},
-    {"_flipMaxDiff_logDensitiesBestWorst", (DL_FUNC) &_flipMaxDiff_logDensitiesBestWorst, 2},
-    {"_flipMaxDiff_logDensityBestWorst", (DL_FUNC) &_flipMaxDiff_logDensityBestWorst, 2},
-    {"_flipMaxDiff_gradientBestWorst", (DL_FUNC) &_flipMaxDiff_gradientBestWorst, 4},
-    {"_flipMaxDiff_logKernels", (DL_FUNC) &_flipMaxDiff_logKernels, 3},
+    {"_flipMaxDiff_logDensitiesMaxDiff", (DL_FUNC) &_flipMaxDiff_logDensitiesMaxDiff, 3},
+    {"_flipMaxDiff_logDensityMaxDiff", (DL_FUNC) &_flipMaxDiff_logDensityMaxDiff, 3},
+    {"_flipMaxDiff_gradientMaxDiff", (DL_FUNC) &_flipMaxDiff_gradientMaxDiff, 5},
+    {"_flipMaxDiff_logKernels", (DL_FUNC) &_flipMaxDiff_logKernels, 4},
     {"_flipMaxDiff_sumWeightedOuterProducts", (DL_FUNC) &_flipMaxDiff_sumWeightedOuterProducts, 2},
     {NULL, NULL, 0}
 };

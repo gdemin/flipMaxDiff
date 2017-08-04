@@ -1,6 +1,6 @@
 #' @importFrom MASS mvrnorm
 mixtureOfNormalsMaxDiff <- function(dat, n.classes, normal.covariance, seed = 123, initial.parameters = NULL,
-                                     trace = 0, pool.variance = FALSE, n.draws = 100)
+                                    trace = 0, pool.variance = FALSE, n.draws = 100, is.tricked = FALSE)
 {
     n.respondents <- length(dat$respondent.indices)
     n.beta <- dat$n.alternatives - 1
@@ -14,7 +14,7 @@ mixtureOfNormalsMaxDiff <- function(dat, n.classes, normal.covariance, seed = 12
     {
         class.memberships <- randomClassMemberships(n.respondents, n.classes, seed)
         class.weights <- colMeans(class.memberships)
-        means <- generateInitialMeans(class.memberships, X, weights, n.questions, n.beta, trace)
+        means <- generateInitialMeans(class.memberships, X, weights, n.questions, n.beta, trace, is.tricked)
         covariances <- generateInitialCovariances(n.classes, n.beta)
     }
     else
@@ -36,19 +36,22 @@ mixtureOfNormalsMaxDiff <- function(dat, n.classes, normal.covariance, seed = 12
         beta.class.draws <- vector("list", n.classes)
         for (c in 1:n.classes)
         {
-            sum.weighted.beta[[c]] <- vector("numeric", n.beta)
-            sum.weighted.squares[[c]] <- matrix(0, n.beta, n.beta)
+            sum.weighted.beta[[c]] <- vector("numeric", n.beta + 1)
+            sum.weighted.squares[[c]] <- matrix(0, n.beta + 1, n.beta + 1)
             beta.class.draws[[c]] <- mvrnorm(n.draws * n.respondents, means[[c]], covariances[[c]])
         }
 
         # For each respondent, calculate the log choice probability
         for (i in 1:n.respondents)
         {
-            beta.draws <- matrix(NA, n.classes * n.draws, n.beta)
+            beta.draws <- matrix(NA, n.classes * n.draws, n.beta + 1)
             for (c in 1:n.classes)
                 beta.draws[(c - 1) * n.draws + (1:n.draws), ] <- beta.class.draws[[c]][(i - 1) * n.draws + (1:n.draws), ]
             ind <- (i - 1) * n.questions + (1:n.questions)
-            logs.of.k <- logKernels(beta.draws, X[ind, ], rep(1, n.questions))
+
+            bd <- beta.draws[, 2:(n.beta + 1)] - beta.draws[, 1]
+
+            logs.of.k <- logKernels(bd, X[ind, ], rep(1, n.questions), is.tricked)
             log.choice.p <- logChoiceProb(logs.of.k, class.weights)
 
             resp.weight <- weights[ind[1]]
@@ -86,21 +89,23 @@ mixtureOfNormalsMaxDiff <- function(dat, n.classes, normal.covariance, seed = 12
     }
 
     info <- respondentLevelInfo(X, best.pars$class.weights, best.pars$means, best.pars$covariances,
-                                alternative.names, dat$subset, n.classes, n.respondents, n.questions, 1000, n.beta)
+                                alternative.names, dat$subset, n.classes, n.respondents, n.questions,
+                                1000, n.beta, is.tricked)
 
     best.covariances <- lapply(best.pars$covariances, function(x) {
-        rownames(x) <- alternative.names[-1]
-        colnames(x) <- alternative.names[-1]
+        # rownames(x) <- alternative.names[-1]
+        # colnames(x) <- alternative.names[-1]
+        rownames(x) <- alternative.names
+        colnames(x) <- alternative.names
         x
     })
 
-    result <- list(log.likelihood = best.log.likelihood,
-                   n.classes = n.classes)
+    result <- list(log.likelihood = best.log.likelihood)
     if (n.classes > 1)
     {
         coef <- matrix(0, nrow = n.beta + 1, ncol = n.classes)
         for (c in 1:n.classes)
-            coef[2:(n.beta + 1), c] <- best.pars$means[[c]]
+            coef[, c] <- best.pars$means[[c]]
         rownames(coef) <- dat$alternative.names
         colnames(coef) <- paste("Class", 1:n.classes)
         result$class.sizes <- best.pars$class.weights
@@ -108,7 +113,8 @@ mixtureOfNormalsMaxDiff <- function(dat, n.classes, normal.covariance, seed = 12
     }
     else
     {
-        coef <- c(0, best.pars$means[[1]])
+        # coef <- c(0, best.pars$means[[1]])
+        coef <- best.pars$means[[1]]
         names(coef) <- dat$alternative.names
         result$class.sizes <- 1
         result$class.preference.shares <- exp(coef) / sum(exp(coef))
@@ -124,7 +130,7 @@ mixtureOfNormalsMaxDiff <- function(dat, n.classes, normal.covariance, seed = 12
     result
 }
 
-generateInitialMeans <- function(class.memberships, X, weights, n.questions, n.beta, trace)
+generateInitialMeans <- function(class.memberships, X, weights, n.questions, n.beta, trace, is.tricked)
 {
     n.classes <- ncol(class.memberships)
     n.respondents <- nrow(class.memberships)
@@ -133,7 +139,8 @@ generateInitialMeans <- function(class.memberships, X, weights, n.questions, n.b
     for(c in 1:n.classes)
     {
         w <- weights * rep(class.memberships[, c], each = n.questions)
-        res[[c]] <- optimizeMaxDiff(X, boost, w, n.beta, trace)$par
+        res[[c]] <- optimizeMaxDiff(X, boost, w, n.beta, trace, is.tricked)$par
+        res[[c]] <- c(0, res[[c]])
     }
     res
 }
@@ -142,7 +149,7 @@ generateInitialCovariances <- function(n.classes, n.beta)
 {
     res <- vector("list", n.classes)
     for(c in 1:n.classes)
-        res[[c]] <- diag(n.beta) * 0.1
+        res[[c]] <- diag(n.beta + 1) * 0.1
     res
 }
 
@@ -151,7 +158,10 @@ parameterMeans <- function(sum.weights, sum.weighted.beta)
     n.classes <- length(sum.weights)
     res <- vector("list", n.classes)
     for (c in 1:n.classes)
+    {
         res[[c]] <- sum.weighted.beta[[c]] / sum.weights[c]
+        res[[c]][1] <- 0
+    }
     res
 }
 
@@ -180,7 +190,7 @@ parameterCovariances <- function(means, sum.weights, sum.weighted.beta, sum.weig
         {
             cross.term <- outer(means[[c]], sum.weighted.beta[[c]])
             covariance.matrix <- (sum.weighted.squares[[c]] - cross.term - t(cross.term) +
-                             outer(means[[c]], means[[c]]) * sum.weights[c]) / sum.weights[c]
+                                      outer(means[[c]], means[[c]]) * sum.weights[c]) / sum.weights[c]
             res[[c]] <- constrainCovariance(covariance.matrix, normal.covariance)
         }
     }
@@ -244,7 +254,7 @@ constrainCovariance <- function(covariance.matrix, normal.covariance)
 }
 
 respondentLevelInfo <- function(X, class.weights, means, covariances, alternative.names, subset, n.classes,
-                                n.respondents, n.questions, n.draws, n.beta)
+                                n.respondents, n.questions, n.draws, n.beta, is.tricked)
 {
     beta.class.draws <- vector("list", n.classes)
     for (c in 1:n.classes)
@@ -254,16 +264,20 @@ respondentLevelInfo <- function(X, class.weights, means, covariances, alternativ
     resp.pars <- matrix(0, n.respondents, n.beta + 1)
     for (i in 1:n.respondents)
     {
-        beta.draws <- matrix(NA, n.classes * n.draws, n.beta)
+        beta.draws <- matrix(NA, n.classes * n.draws, n.beta + 1)
         for (c in 1:n.classes)
             beta.draws[(c - 1) * n.draws + (1:n.draws), ] <- beta.class.draws[[c]][(i - 1) * n.draws + (1:n.draws), ]
         ind <- (i - 1) * n.questions + (1:n.questions)
-        logs.of.k <- logKernels(beta.draws, X[ind, ], rep(1, n.questions))
+
+        bd <- beta.draws[, 2:(n.beta + 1)] - beta.draws[, 1]
+
+        logs.of.k <- logKernels(bd, X[ind, ], rep(1, n.questions), is.tricked)
         log.choice.p <- logChoiceProb(logs.of.k, class.weights)
         draw.weights <- exp(rep(log(class.weights), each = n.draws) + logs.of.k - log.choice.p)
 
         pp[i, ] <- prop.table(colSums(matrix(draw.weights, nrow = n.draws)))
-        resp.pars[i, 2:(n.beta + 1)] <- colSums(beta.draws * draw.weights) / sum(draw.weights)
+        # resp.pars[i, 2:(n.beta + 1)] <- colSums(beta.draws * draw.weights) / sum(draw.weights)
+        resp.pars[i, ] <- colSums(beta.draws * draw.weights) / sum(draw.weights)
     }
     posterior.probabilities <- matrix(NA, length(subset), n.classes)
     posterior.probabilities[subset, ] <- pp

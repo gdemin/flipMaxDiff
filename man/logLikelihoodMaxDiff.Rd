@@ -4,7 +4,7 @@
 \alias{logLikelihoodMaxDiff}
 \title{\code{dMaxDiff}}
 \usage{
-logLikelihoodMaxDiff(b, X, boost, weights)
+logLikelihoodMaxDiff(b, X, boost, weights, is.tricked)
 }
 \arguments{
 \item{b}{A vector of parameter estimates.}
@@ -14,6 +14,8 @@ logLikelihoodMaxDiff(b, X, boost, weights)
 \item{boost}{Boosting constants.}
 
 \item{weights}{An optional vector of sampling or frequency weights.}
+
+\item{is.tricked}{Whether to use tricked logit instead of rank-ordered logit with ties.}
 }
 \description{
 The log-likelihood for a max-diff experiment.

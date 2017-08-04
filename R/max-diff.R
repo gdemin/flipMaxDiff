@@ -22,21 +22,29 @@
 #' @param lc Whether to run latent class step at the end if characteristics are supplied.
 #' @param output Output type. Can be "Probabilities" or "Classes".
 #' @param tasks.left.out Number of questions to leave out for cross-validation.
+#' @param algorithm If "HB", Hierarchical Bayes with a MVN prior is used and the other parameters are ignored.
 #' @param is.mixture.of.normals Whether to model with mixture of normals instead of LCA.
 #' @param normal.covariance The form of the covariance matrix for mixture of normals.
 #' Can be 'Full, 'Spherical', 'Diagonal'.
 #' @param pool.variance Whether to pool parameter covariances between classes in mixture of normals.
 #' @param lc.tolerance The tolerance used for defining convergence in latent class analysis.
 #' @param n.draws The number of draws when fitting mixture of normals.
+#' @param is.tricked Whether to use tricked logit instead of rank-ordered logit with ties.
+#' @param hb.iterations The number of iterations in Hierarchical Bayes.
+#' @param hb.chains The number of chains in Hierarchical Bayes.
 #' @export
 FitMaxDiff <- function(design, version = NULL, best, worst, alternative.names, n.classes = 1,
                        subset = NULL, weights = NULL, characteristics = NULL, seed = 123,
                        initial.parameters = NULL, trace = 0, sub.model.outputs = FALSE, lc = TRUE,
                        output = "Probabilities", tasks.left.out = 0, is.mixture.of.normals = FALSE,
-                       normal.covariance = "Full", pool.variance = FALSE, lc.tolerance = 0.0001, n.draws = 100)
+                       algorithm = "Default",
+                       normal.covariance = "Full", pool.variance = FALSE, lc.tolerance = 0.0001, n.draws = 100,
+                       is.tricked = FALSE, hb.iterations = 100, hb.chains = 1)
 {
     if (!is.null(weights) && !is.null(characteristics))
-        stop("Weights are not able to be applied when characteristics are supplied")
+        stop("Weights are not able to be applied when characteristics are supplied.")
+    if (!is.null(weights) && algorithm == "HB")
+        stop("Weights are not able to be applied for Hierarchical Bayes.")
     if (!lc && is.null(characteristics))
         stop("There is no model to run. Select covariates and/or run latent class analysis over respondents.")
     if (!is.null(characteristics) && is.mixture.of.normals)
@@ -48,42 +56,29 @@ FitMaxDiff <- function(design, version = NULL, best, worst, alternative.names, n
     dat <- cleanAndCheckData(design, version, best, worst, alternative.names, subset, weights,
                              characteristics, seed, questions.left.out)
 
-    if (is.null(characteristics))
+    if (algorithm == "HB")
+        result <- hierarchicalBayesMaxDiff(dat, hb.iterations, hb.chains, TRUE)
+    else if (is.null(characteristics))
     {
         if (!is.mixture.of.normals)
             result <- latentClassMaxDiff(dat, dat$respondent.indices, NULL, n.classes, seed,
-                                         initial.parameters, 0, trace, TRUE, lc.tolerance)
+                                         initial.parameters, 0, trace, TRUE, lc.tolerance, is.tricked)
         else
             result <- mixtureOfNormalsMaxDiff(dat, n.classes, normal.covariance, seed, initial.parameters,
-                                               trace, pool.variance, n.draws)
+                                               trace, pool.variance, n.draws, is.tricked)
     }
     else
-    {
-        result <- varyingCoefficientsMaxDiff(dat, n.classes, seed, initial.parameters,
-                                             trace, apply.weights, lc, sub.model.outputs, lc.tolerance)
-    }
+        result <- varyingCoefficientsMaxDiff(dat, n.classes, seed, initial.parameters, trace, apply.weights,
+                                             lc, sub.model.outputs, lc.tolerance, is.tricked)
 
-    n.respondents <- length(dat$respondent.indices)
-    in.sample.accuracies <- predictionAccuracies(result, dat$X.in, dat$n.questions.in, dat$subset)
-    w <- dat$weights[(1:n.respondents) * dat$n.questions.in]
-    result$in.sample.accuracy <- sum(in.sample.accuracies * w) / sum(w)
-    if (questions.left.out > 0)
-    {
-        result$prediction.accuracies <- predictionAccuracies(result, dat$X.out, questions.left.out, dat$subset)
-        result$out.sample.accuracy <- sum(result$prediction.accuracies * w) / sum(w)
-    }
-    else
-    {
-        result$prediction.accuracies <- in.sample.accuracies
-        result$out.sample.accuracy <- NA
-    }
-
+    result <- accuracyResults(dat, result, questions.left.out)
     if (sub.model.outputs)
         cat("Latent class analysis",
             "BIC:", result$bic,
             "LL:", result$log.likelihood,
-            "Number of classes:", result$n.classes)
+            "Number of classes:", n.classes)
     result$n.respondents <- length(dat$respondent.indices) # this should be the unfiltered number of respondents
+    result$n.classes <- n.classes
     result$subset <- subset
     result$weights <- weights
     result$n.questions <- dat$n.questions
@@ -95,6 +90,7 @@ FitMaxDiff <- function(design, version = NULL, best, worst, alternative.names, n
     resp.pars <- as.matrix(RespondentParameters(result))[dat$subset, ]
     result$respondent.probabilities <- exp(resp.pars) / rowSums(exp(resp.pars))
     result$is.mixture.of.normals <- is.mixture.of.normals
+    result$algorithm <- algorithm
     result
 }
 
@@ -115,6 +111,25 @@ predictionAccuracies <- function(object, X, n.questions, subset)
             score[j] <- all(u[1] > u[-1])
         }
         result[i] <- mean(score)
+    }
+    result
+}
+
+accuracyResults <- function(dat, result, questions.left.out)
+{
+    n.respondents <- length(dat$respondent.indices)
+    in.sample.accuracies <- predictionAccuracies(result, dat$X.in, dat$n.questions.in, dat$subset)
+    w <- dat$weights[(1:n.respondents) * dat$n.questions.in]
+    result$in.sample.accuracy <- sum(in.sample.accuracies * w) / sum(w)
+    if (questions.left.out > 0)
+    {
+        result$prediction.accuracies <- predictionAccuracies(result, dat$X.out, questions.left.out, dat$subset)
+        result$out.sample.accuracy <- sum(result$prediction.accuracies * w) / sum(w)
+    }
+    else
+    {
+        result$prediction.accuracies <- in.sample.accuracies
+        result$out.sample.accuracy <- NA
     }
     result
 }
@@ -163,6 +178,8 @@ print.FitMaxDiff <- function(x, ...)
         "Max-Diff: Varying Coefficients"
     else if (x$is.mixture.of.normals)
         "Max-Diff: Mixture of Normals"
+    else if (x$algorithm == "HB")
+        "Max-Diff: Hierarchical Bayes"
     else
         "Max-Diff: Latent Class Analysis"
     footer <- paste0("n = ", x$n.respondents, "; ")
@@ -178,9 +195,13 @@ print.FitMaxDiff <- function(x, ...)
         footer <- paste0(footer, "Questions left out: ", x$questions.left.out, "; ")
     }
     footer <- paste0(footer, "Alternatives per question: ", x$n.alternatives.per.task, "; ")
-    footer <- paste0(footer, "Log-likelihood: ", FormatWithDecimals(x$log.likelihood, 2), "; ")
-    footer <- paste0(footer, "BIC: ", FormatWithDecimals(x$bic, 2), "; ")
-    footer <- if (!x$lc)
+    if (x$algorithm != "HB")
+    {
+        footer <- paste0(footer, "Log-likelihood: ", FormatWithDecimals(x$log.likelihood, 2), "; ")
+        footer <- paste0(footer, "BIC: ", FormatWithDecimals(x$bic, 2), "; ")
+    }
+
+    footer <- if (!x$lc && x$algorithm != "HB" && !x$is.mixture.of.normals)
         paste0(footer, "Latent class analysis over respondents not applied; ")
     else if (x$is.mixture.of.normals)
     {
@@ -189,6 +210,8 @@ print.FitMaxDiff <- function(x, ...)
         else
             paste0(footer, "Mixture of normals: ", x$n.classes, " classes; ")
     }
+    else if (x$algorithm == "HB")
+        footer
     else
     {
         if (x$n.classes == 1)
@@ -204,7 +227,7 @@ print.FitMaxDiff <- function(x, ...)
         paste0("Prediction accuracy (in-sample): ", FormatAsPercent(x$in.sample.accuracy, 3))
 
     if (x$n.classes == 1 && is.null(x$covariates.notes)
-        && (!x$is.mixture.of.normals || x$output == "Classes"))
+        && ((!x$is.mixture.of.normals && x$algorithm != "HB") || x$output == "Classes"))
     {
         col.labels <- "Probabilities (%)"
         MaxDiffTableClasses(as.matrix(x$class.preference.shares), col.labels, title, subtitle, footer)

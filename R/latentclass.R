@@ -1,6 +1,6 @@
 latentClassMaxDiff <- function(dat, ind.levels, resp.pars = NULL, n.classes = 1, seed = 123,
                                initial.parameters = NULL, n.previous.parameters = 0, trace = 0,
-                               apply.weights = TRUE, tol = 0.0001)
+                               apply.weights = TRUE, tol = 0.0001, is.tricked = FALSE)
 {
     n.respondents <- length(dat$respondent.indices)
     n.levels <- length(ind.levels)
@@ -18,16 +18,17 @@ latentClassMaxDiff <- function(dat, ind.levels, resp.pars = NULL, n.classes = 1,
     else
     {
         class.memberships <- randomClassMemberships(n.levels, n.classes, seed)
-        inferParameters(class.memberships, X, boost, weights, ind.levels, n.beta, trace)
+        inferParameters(class.memberships, X, boost, weights, ind.levels, n.beta, trace, is.tricked)
     }
 
     previous.ll <- -Inf
 
     repeat
     {
-        pp <- posteriorProbabilities(p, X, boost, ind.levels, n.classes, n.beta)
-        p <- inferParameters(pp, X, boost, weights, ind.levels, n.beta, trace)
-        ll <- logLikelihood(p, X, boost, weights, ind.levels, n.classes, n.beta, n.questions, apply.weights = apply.weights)
+        pp <- posteriorProbabilities(p, X, boost, ind.levels, n.classes, n.beta, is.tricked)
+        p <- inferParameters(pp, X, boost, weights, ind.levels, n.beta, trace, is.tricked)
+        ll <- logLikelihood(p, X, boost, weights, ind.levels, n.classes, n.beta, n.questions,
+                            apply.weights, is.tricked)
         # print(ll)
         if (ll - previous.ll < tol)
             break
@@ -59,8 +60,7 @@ latentClassMaxDiff <- function(dat, ind.levels, resp.pars = NULL, n.classes = 1,
         input.respondent.pars <- resp.pars
 
     result <- list(posterior.probabilities = posterior.probabilities,
-                   log.likelihood = ll,
-                   n.classes = n.classes)
+                   log.likelihood = ll)
     if (n.classes > 1)
     {
         coef <- matrix(0, nrow = n.beta + 1, ncol = n.classes)
@@ -111,7 +111,7 @@ randomClassMemberships <- function(n, n.classes, seed = 123)
 }
 
 # Infer parameters given class memberships
-inferParameters <- function(class.memberships, X, boost, weights, ind.levels, n.beta, trace)
+inferParameters <- function(class.memberships, X, boost, weights, ind.levels, n.beta, trace, is.tricked)
 {
     n.classes <- ncol(class.memberships)
     n.parameters <- n.beta * n.classes + n.classes - 1
@@ -125,7 +125,7 @@ inferParameters <- function(class.memberships, X, boost, weights, ind.levels, n.
             class.weights[ind.levels[[l]]] <- class.memberships[l, c]
         if (!is.null(weights))
             class.weights <- class.weights * weights
-        solution <- optimizeMaxDiff(X, boost, class.weights, n.beta, trace)
+        solution <- optimizeMaxDiff(X, boost, class.weights, n.beta, trace, is.tricked)
         res[((c - 1) * n.beta + 1):(c * n.beta)] <- solution$par
     }
 
@@ -139,11 +139,11 @@ inferParameters <- function(class.memberships, X, boost, weights, ind.levels, n.
 }
 
 # Calculate posterior probabilities of class membership given parameters
-posteriorProbabilities <- function(pars, X, boost, ind.levels, n.classes, n.beta)
+posteriorProbabilities <- function(pars, X, boost, ind.levels, n.classes, n.beta, is.tricked)
 {
     log.class.weights <- log(getClassWeights(pars, n.classes, n.beta))
     class.pars <- getClassParameters(pars, n.classes, n.beta)
-    log.densities <- logDensities(class.pars, X, boost, ind.levels, n.classes)
+    log.densities <- logDensities(class.pars, X, boost, ind.levels, n.classes, is.tricked)
 
     n.levels <- length(ind.levels)
     repsondents.log.densities <- vector("numeric", n.levels)
@@ -154,11 +154,12 @@ posteriorProbabilities <- function(pars, X, boost, ind.levels, n.classes, n.beta
         - t(matrix(rep(repsondents.log.densities, each = n.classes), n.classes)))
 }
 
-logLikelihood <- function(pars, X, boost, weights, ind.levels, n.classes, n.beta, n.questions, apply.weights)
+logLikelihood <- function(pars, X, boost, weights, ind.levels, n.classes, n.beta, n.questions,
+                          apply.weights, is.tricked)
 {
     log.class.weights <- log(getClassWeights(pars, n.classes, n.beta))
     class.pars <- getClassParameters(pars, n.classes, n.beta)
-    log.densities <- logDensities(class.pars, X, boost, ind.levels, n.classes)
+    log.densities <- logDensities(class.pars, X, boost, ind.levels, n.classes, is.tricked)
     n.levels <- length(ind.levels)
     res <- 0
     for (l in 1:n.levels)
@@ -175,13 +176,13 @@ logLikelihood <- function(pars, X, boost, weights, ind.levels, n.classes, n.beta
     res
 }
 
-logDensities <- function(pars.list, X, boost, ind.levels, n.classes)
+logDensities <- function(pars.list, X, boost, ind.levels, n.classes, is.tricked)
 {
     log.shares <- matrix(NA, nrow(X), n.classes)
     for (c in 1:n.classes)
     {
         e.u <- exp(matrix(c(0, pars.list[[c]])[X], ncol = ncol(X)) + boost)
-        log.shares[, c] <- logDensitiesBestWorst(e.u, rep(1, length(e.u)))
+        log.shares[, c] <- logDensitiesMaxDiff(e.u, rep(1, length(e.u)), is.tricked)
     }
 
     n.levels <- length(ind.levels)
@@ -248,7 +249,7 @@ computeRespondentParameters <- function(object, alternative.names, input.respond
 {
     pp <- object$posterior.probabilities
     coef <- object$coef
-    n.classes <- object$n.classes
+    n.classes <- length(object$class.sizes)
     if (n.classes > 1)
         result <- pp[ , 1, drop = FALSE] %*% t(coef[, 1, drop = FALSE])
     else
