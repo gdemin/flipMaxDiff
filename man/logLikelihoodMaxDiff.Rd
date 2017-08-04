@@ -18,5 +18,5 @@ logLikelihoodMaxDiff(b, X, boost, weights, is.tricked)
 \item{is.tricked}{Whether to use tricked logit instead of rank-ordered logit with ties.}
 }
 \description{
-The log-likelihood for a max-diff experiment.
+The log-likelihood for a MaxDiff experiment.
 }
