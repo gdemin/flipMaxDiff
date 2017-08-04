@@ -76,10 +76,14 @@ hierarchicalBayesMaxDiff <- function(dat, n.iterations = 100, n.chains = 1, is.t
         }
     }"
 
-    suppressWarnings(stan.fit <- stan(model_code = model.code,
-                                      data = stan.dat,
-                                      iter = n.iterations,
-                                      chains = n.chains))
+    # mod <- stan_model(model_code = model.code)
+
+    stan.fit <- sampling(mod, data = stan.dat, chains = n.chains, iter = n.iterations)
+
+    # suppressWarnings(stan.fit <- stan(model_code = model.code,
+    #                                   data = stan.dat,
+    #                                   iter = n.iterations,
+    #                                   chains = n.chains))
 
     resp.pars <- t(colMeans(extract(stan.fit, pars=c("Beta"))$Beta, dims = 1))
     colnames(resp.pars) <- dat$alternative.names
