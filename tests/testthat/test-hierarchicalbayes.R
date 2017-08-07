@@ -13,6 +13,6 @@ context("Hierarchical Bayes")
 # test_that("HB", {
 #     result <- FitMaxDiff(design = tech.design, version = rep(1, nrow(best)), best = best, worst = worst,
 #                          alternative.names = names, algorithm = "HB")
-#     # expect_error(print(result), NA)
+#     expect_error(print(result), NA)
 # })
 

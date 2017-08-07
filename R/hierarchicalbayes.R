@@ -4,8 +4,6 @@ hierarchicalBayesMaxDiff <- function(dat, n.iterations = 100, n.chains = 1, is.t
     # We want to replace this call with a proper integration of rstan into this package
     require(rstan)
 
-    # writes a compiled Stan program to the disk to avoid recompiling
-    rstan_options(auto_write=TRUE)
     # allows Stan chains to run in parallel on multiprocessor machines
     options(mc.cores = parallel::detectCores())
 
@@ -40,12 +38,25 @@ hierarchicalBayesMaxDiff <- function(dat, n.iterations = 100, n.chains = 1, is.t
                      X = X,
                      Z = Z)
 
-    suppressWarnings(stan.fit <- sampling(mod, data = stan.dat, chains = n.chains, iter = n.iterations))
+    if (.Platform$OS.type == "unix")
+    {
+        # Loads a precompiled stan model called mod from sysdata.rda to avoid recompiling.
+        # The code used to generate this is:
+        # mod <- rstan::stan_model(model_code = model.code)
+        # devtools::use_data(mod, internal = TRUE, overwrite = TRUE)
+        # where model.code is the stan code as a string.
+        suppressWarnings(stan.fit <- sampling(mod, data = stan.dat, chains = n.chains, iter = n.iterations))
+    }
+    else # windows
+    {
+        rstan_options(auto_write=TRUE) # writes a compiled Stan program to the disk to avoid recompiling
+        suppressWarnings(stan.fit <- stan(file = "exec/hb.stan", data = stan.dat, iter = n.iterations,
+                                          chains = n.chains))
+    }
 
     resp.pars <- t(colMeans(extract(stan.fit, pars=c("Beta"))$Beta, dims = 1))
     colnames(resp.pars) <- dat$alternative.names
 
-    # result <- list(respondent.parameters = resp.pars, stan.fit = stan.fit)
     result <- list(respondent.parameters = resp.pars)
     class(result) <- "FitMaxDiff"
     result
