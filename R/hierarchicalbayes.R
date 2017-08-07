@@ -40,6 +40,18 @@ hierarchicalBayesMaxDiff <- function(dat, n.iterations = 100, n.chains = 1, is.t
                      X = X,
                      Z = Z)
 
+    suppressWarnings(stan.fit <- sampling(mod, data = stan.dat, chains = n.chains, iter = n.iterations))
+
+    resp.pars <- t(colMeans(extract(stan.fit, pars=c("Beta"))$Beta, dims = 1))
+    colnames(resp.pars) <- dat$alternative.names
+
+    result <- list(respondent.parameters = resp.pars, stan.fit = stan.fit)
+    class(result) <- "FitMaxDiff"
+    result
+}
+
+.onLoad <- function(libname, pkgname) {
+
     model.code <- "data {
         int<lower=2> C; // Number of choices in each scenario
         int<lower=1> K; // Number of alternatives
@@ -76,15 +88,8 @@ hierarchicalBayesMaxDiff <- function(dat, n.iterations = 100, n.chains = 1, is.t
         }
     }"
 
-    suppressWarnings(stan.fit <- stan(model_code = model.code,
-                                      data = stan.dat,
-                                      iter = n.iterations,
-                                      chains = n.chains))
-
-    resp.pars <- t(colMeans(extract(stan.fit, pars=c("Beta"))$Beta, dims = 1))
-    colnames(resp.pars) <- dat$alternative.names
-
-    result <- list(respondent.parameters = resp.pars, stan.fit = stan.fit)
-    class(result) <- "FitMaxDiff"
-    result
+    message("starting")
+    mod <- rstan::stan_model(model_code = model.code)
+    devtools::use_data(mod, internal = TRUE, overwrite = TRUE)
+    message("finished")
 }
