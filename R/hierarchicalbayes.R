@@ -1,4 +1,4 @@
-#' @importFrom rstan rstan_options stan extract
+#' @importFrom rstan rstan_options stan extract sampling
 hierarchicalBayesMaxDiff <- function(dat, n.iterations = 100, n.chains = 1, is.tricked = FALSE)
 {
     # We want to replace this call with a proper integration of rstan into this package
