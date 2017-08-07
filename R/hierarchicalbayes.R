@@ -45,7 +45,8 @@ hierarchicalBayesMaxDiff <- function(dat, n.iterations = 100, n.chains = 1, is.t
     resp.pars <- t(colMeans(extract(stan.fit, pars=c("Beta"))$Beta, dims = 1))
     colnames(resp.pars) <- dat$alternative.names
 
-    result <- list(respondent.parameters = resp.pars, stan.fit = stan.fit)
+    # result <- list(respondent.parameters = resp.pars, stan.fit = stan.fit)
+    result <- list(respondent.parameters = resp.pars)
     class(result) <- "FitMaxDiff"
     result
 }
