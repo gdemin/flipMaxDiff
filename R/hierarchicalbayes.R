@@ -41,7 +41,7 @@ hierarchicalBayesMaxDiff <- function(dat, n.iterations = 100, n.chains = 1, is.t
     if (.Platform$OS.type == "unix")
     {
         # Loads a precompiled stan model called mod from sysdata.rda to avoid recompiling.
-        # The code used to generate this is:
+        # The R code used to generate mod on a linux machine is:
         # mod <- rstan::stan_model(model_code = model.code)
         # devtools::use_data(mod, internal = TRUE, overwrite = TRUE)
         # where model.code is the stan code as a string.
