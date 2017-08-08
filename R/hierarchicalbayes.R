@@ -49,7 +49,7 @@ hierarchicalBayesMaxDiff <- function(dat, n.iterations = 100, n.chains = 1, is.t
         suppressWarnings(stan.fit <- sampling(mod, data = stan.dat, chains = n.chains, iter = n.iterations))
         # Replace stanmodel with a dummy as stanmodel makes the output many times larger,
         # and is not required for diagnostic plots.
-        dummy.stanmodel <- c()
+        dummy.stanmodel <- ""
         class(dummy.stanmodel) <- "stanmodel"
         stan.fit@stanmodel <- dummy.stanmodel
     }
