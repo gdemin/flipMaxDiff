@@ -46,14 +46,13 @@ hierarchicalBayesMaxDiff <- function(dat, n.iterations = 100, n.chains = 1, is.t
         # devtools::use_data(mod, internal = TRUE, overwrite = TRUE)
         # where model.code is the stan code as a string.
         # Ideally we would want to recompile when the package is built (similar to Rcpp)
-        suppressWarnings(stan.fit <- sampling(mod, data = stan.dat, chains = n.chains,
-                                              iter = n.iterations, save_dso = FALSE))
+        suppressWarnings(stan.fit <- sampling(mod, data = stan.dat, chains = n.chains, iter = n.iterations))
     }
     else # windows
     {
         rstan_options(auto_write=TRUE) # writes a compiled Stan program to the disk to avoid recompiling
         suppressWarnings(stan.fit <- stan(file = "exec/hb.stan", data = stan.dat, iter = n.iterations,
-                                          chains = n.chains, save_dso = FALSE))
+                                          chains = n.chains))
     }
 
     resp.pars <- t(colMeans(extract(stan.fit, pars=c("Beta"))$Beta, dims = 1))
