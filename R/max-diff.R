@@ -32,14 +32,17 @@
 #' @param is.tricked Whether to use tricked logit instead of rank-ordered logit with ties.
 #' @param hb.iterations The number of iterations in Hierarchical Bayes.
 #' @param hb.chains The number of chains in Hierarchical Bayes.
+#' @param hb.max.tree.depth http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded
+#' @param hb.adapt.delta http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup
 #' @export
 FitMaxDiff <- function(design, version = NULL, best, worst, alternative.names, n.classes = 1,
                        subset = NULL, weights = NULL, characteristics = NULL, seed = 123,
                        initial.parameters = NULL, trace = 0, sub.model.outputs = FALSE, lc = TRUE,
                        output = "Probabilities", tasks.left.out = 0, is.mixture.of.normals = FALSE,
-                       algorithm = "Default",
-                       normal.covariance = "Full", pool.variance = FALSE, lc.tolerance = 0.0001, n.draws = 100,
-                       is.tricked = FALSE, hb.iterations = 100, hb.chains = 1)
+                       algorithm = "Default", normal.covariance = "Full", pool.variance = FALSE,
+                       lc.tolerance = 0.0001, n.draws = 100, is.tricked = FALSE,
+                       hb.iterations = 100, hb.chains = 1, hb.max.tree.depth = 10,
+                       hb.adapt.delta = 0.8)
 {
     if (!is.null(weights) && !is.null(characteristics))
         stop("Weights are not able to be applied when characteristics are supplied.")
@@ -57,7 +60,10 @@ FitMaxDiff <- function(design, version = NULL, best, worst, alternative.names, n
                              characteristics, seed, questions.left.out)
 
     if (algorithm == "HB")
-        result <- hierarchicalBayesMaxDiff(dat, hb.iterations, hb.chains, TRUE)
+    {
+        result <- hierarchicalBayesMaxDiff(dat, hb.iterations, hb.chains, hb.max.tree.depth,
+                                           hb.adapt.delta, TRUE)
+    }
     else if (is.null(characteristics))
     {
         if (!is.mixture.of.normals)

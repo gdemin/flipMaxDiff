@@ -11,7 +11,8 @@ FitMaxDiff(design, version = NULL, best, worst, alternative.names,
   tasks.left.out = 0, is.mixture.of.normals = FALSE,
   algorithm = "Default", normal.covariance = "Full",
   pool.variance = FALSE, lc.tolerance = 1e-04, n.draws = 100,
-  is.tricked = FALSE, hb.iterations = 100, hb.chains = 1)
+  is.tricked = FALSE, hb.iterations = 100, hb.chains = 1,
+  hb.max.tree.depth = 10, hb.adapt.delta = 0.8)
 }
 \arguments{
 \item{design}{A \code{data.frame}, where the first variable is called 'Version', the second is called 'Task' or 'Question',
@@ -70,6 +71,10 @@ Can be 'Full, 'Spherical', 'Diagonal'.}
 \item{hb.iterations}{The number of iterations in Hierarchical Bayes.}
 
 \item{hb.chains}{The number of chains in Hierarchical Bayes.}
+
+\item{hb.max.tree.depth}{http://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded}
+
+\item{hb.adapt.delta}{http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup}
 }
 \description{
 Fits a latent class rank-ordered logit model with ties to a max-diff experiment.

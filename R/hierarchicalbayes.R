@@ -1,5 +1,6 @@
 #' @importFrom rstan rstan_options stan extract sampling
-hierarchicalBayesMaxDiff <- function(dat, n.iterations = 100, n.chains = 1, is.tricked = FALSE)
+hierarchicalBayesMaxDiff <- function(dat, n.iterations = 100, n.chains = 1, max.tree.depth = 10,
+                                     adapt.delta = 0.8, is.tricked = FALSE)
 {
     # We want to replace this call with a proper integration of rstan into this package
     require(rstan)
@@ -46,7 +47,7 @@ hierarchicalBayesMaxDiff <- function(dat, n.iterations = 100, n.chains = 1, is.t
         # devtools::use_data(mod, internal = TRUE, overwrite = TRUE)
         # where model.code is the stan code as a string.
         # Ideally we would want to recompile when the package is built (similar to Rcpp)
-        suppressWarnings(stan.fit <- sampling(mod, data = stan.dat, chains = n.chains, iter = n.iterations))
+        stan.fit <- sampling(mod, data = stan.dat, chains = n.chains, iter = n.iterations)
         # Replace stanmodel with a dummy as stanmodel makes the output many times larger,
         # and is not required for diagnostic plots.
         dummy.stanmodel <- ""
@@ -56,8 +57,9 @@ hierarchicalBayesMaxDiff <- function(dat, n.iterations = 100, n.chains = 1, is.t
     else # windows
     {
         rstan_options(auto_write=TRUE) # writes a compiled Stan program to the disk to avoid recompiling
-        suppressWarnings(stan.fit <- stan(file = "exec/hb.stan", data = stan.dat, iter = n.iterations,
-                                          chains = n.chains))
+        stan.fit <- stan(file = "exec/hb.stan", data = stan.dat, iter = n.iterations,
+                         chains = n.chains, control = list(max_treedepth = max.tree.depth,
+                                                           adapt_delta = adapt.delta))
     }
 
     resp.pars <- t(colMeans(extract(stan.fit, pars=c("Beta"))$Beta, dims = 1))
