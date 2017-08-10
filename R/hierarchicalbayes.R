@@ -47,7 +47,8 @@ hierarchicalBayesMaxDiff <- function(dat, n.iterations = 100, n.chains = 1, max.
         # devtools::use_data(mod, internal = TRUE, overwrite = TRUE)
         # where model.code is the stan code as a string.
         # Ideally we would want to recompile when the package is built (similar to Rcpp)
-        stan.fit <- sampling(mod, data = stan.dat, chains = n.chains, iter = n.iterations)
+        stan.fit <- sampling(mod, data = stan.dat, chains = n.chains, iter = n.iterations,
+                             control = list(max_treedepth = max.tree.depth, adapt_delta = adapt.delta))
         # Replace stanmodel with a dummy as stanmodel makes the output many times larger,
         # and is not required for diagnostic plots.
         dummy.stanmodel <- ""
