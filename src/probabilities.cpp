@@ -229,7 +229,7 @@ NumericVector gradientMaxDiffTricked(NumericMatrix e_u, IntegerMatrix x, Numeric
         double total = 1 / e_u(i, n_choices - 1) + non_worst;
         if (x(i, n_choices - 1) > 0)
             result[x(i, n_choices - 1) - 1] -= non_worst * weights[i] / total;
-        for (int j = 1; j < n_choices; j++)
+        for (int j = 0; j < n_choices - 1; j++)
             if (x(i, j) > 0)
                 result[x(i, j) - 1] += weights[i] / (total * e_u(i, j));
     }
